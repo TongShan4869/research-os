@@ -1,0 +1,21 @@
+{
+  "edges": [
+    {
+      "source": "project:auditory-demo",
+      "target": "paper:smith-2024",
+      "type": "uses"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "project:auditory-demo",
+      "title": "Auditory Demo Project",
+      "type": "Project"
+    },
+    {
+      "id": "paper:smith-2024",
+      "title": "Auditory Brainstem Responses In Demo Conditions",
+      "type": "Paper"
+    }
+  ]
+}

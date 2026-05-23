@@ -1,0 +1,16 @@
+project:
+  folder: Projects
+paper:
+  folder: Sources/Papers
+concept:
+  folder: Concepts
+claim:
+  folder: Claims
+method:
+  folder: Methods
+dataset:
+  folder: Datasets
+question:
+  folder: Questions
+result:
+  folder: Results

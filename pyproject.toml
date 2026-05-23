@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research-os"
+version = "0.1.0"
+description = "Local-first Research OS workspace template and CLI helpers."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "PyYAML>=6.0",
+]
+
+[project.scripts]
+research-os = "research_os.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+research_os = ["template/**/*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

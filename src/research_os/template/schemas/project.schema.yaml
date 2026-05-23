@@ -1,0 +1,24 @@
+type: array
+items:
+  type: object
+  required:
+    - id
+    - title
+    - status
+  properties:
+    id:
+      type: string
+    title:
+      type: string
+    status:
+      type: string
+    obsidian_note:
+      type: string
+    folders:
+      type: object
+    zotero_collections:
+      type: array
+    tags:
+      type: array
+    created:
+      type: string

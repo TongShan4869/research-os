@@ -1,0 +1,10 @@
+version: 1
+profile:
+  onboarding_complete: false
+paths:
+  obsidian_vault: null
+  zotero_library: null
+  project_roots: []
+graph:
+  json: graph/graph.json
+  duckdb: graph/graph.duckdb

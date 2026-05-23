@@ -1,0 +1,12 @@
+- id: auditory-demo
+  title: Auditory Demo Project
+  status: active
+  obsidian_note: Projects/auditory-demo.md
+  folders:
+    analysis: projects/auditory-demo/analysis
+  zotero_collections:
+    - Demo Papers
+  tags:
+    - auditory-neuroscience
+    - demo
+  created: 2026-05-23

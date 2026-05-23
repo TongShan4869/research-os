@@ -1,0 +1,9 @@
+- id: paper:smith-2024
+  type: Paper
+  title: Auditory Brainstem Responses In Demo Conditions
+  zotero_item_key: ABCD1234
+  citation_key: smith2024demo
+  projects:
+    - auditory-demo
+  concepts:
+    - auditory-brainstem-response
