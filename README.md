@@ -63,6 +63,7 @@ That lets an agent understand that a paper tagged or linked to `ABR` is relevant
 ```text
 .
   AGENTS.md                         Codex instructions for this development repo
+  PROJECT_MEMORY.md                 durable project context for future sessions
   README.md
   pyproject.toml
   src/research_os/

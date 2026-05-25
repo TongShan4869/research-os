@@ -4,11 +4,12 @@ This repository builds Research OS, a local-first indexed research workspace. Tr
 
 When working in this repository:
 
-1. Read `research-os.yaml` only when operating inside a generated hub or demo hub.
-2. Keep `src/research_os/template/AGENTS.md` and `examples/demo-research-workspace/AGENTS.md` aligned when changing hub startup behavior.
-3. Use `registries/projects.yaml`, `registries/sources.yaml`, `obsidian/starter-vault/Home.md`, and `graph/graph.json` as the core indexed context surfaces.
-4. When the user mentions a project, tag, paper, folder, concept, or role, resolve it through the registries before relying on folder names alone.
-5. Prefer small CLI commands that validate, index, render, or report state over hidden magic.
+1. Read `PROJECT_MEMORY.md` for durable project context before planning non-trivial changes.
+2. Read `research-os.yaml` only when operating inside a generated hub or demo hub.
+3. Keep `src/research_os/template/AGENTS.md` and `examples/demo-research-workspace/AGENTS.md` aligned when changing hub startup behavior.
+4. Use `registries/projects.yaml`, `registries/sources.yaml`, `obsidian/starter-vault/Home.md`, and `graph/graph.json` as the core indexed context surfaces.
+5. When the user mentions a project, tag, paper, folder, concept, or role, resolve it through the registries before relying on folder names alone.
+6. Prefer small CLI commands that validate, index, render, or report state over hidden magic.
 
 Safety rules:
 
