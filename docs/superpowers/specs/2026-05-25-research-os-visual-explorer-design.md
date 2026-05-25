@@ -1,0 +1,157 @@
+# Research OS Visual Explorer Design
+
+Date: 2026-05-25
+Status: Approved for implementation planning
+
+## Goal
+
+Add a local-first visual exploration surface to Research OS, inspired by the interaction model in Understand-Anything, while keeping Research OS centered on research workspace context rather than codebase analysis.
+
+The first version should make the indexed relationships among projects, papers, concepts, Zotero collections, and folders easier to search, inspect, and explain. Obsidian remains the daily cockpit. The new visual explorer is the map view for relationships that are too dense for markdown tables and backlinks.
+
+## Non-Goals
+
+- Do not build an Obsidian plugin.
+- Do not add LLM summaries, semantic search, or generated tours in the first slice.
+- Do not deep-process papers automatically.
+- Do not mutate Zotero records.
+- Do not import or depend on Understand-Anything internals.
+- Do not require a web server for the first generated dashboard.
+
+## User Experience
+
+Research OS hubs gain a generated dashboard at:
+
+```text
+visual/index.html
+```
+
+The dashboard reads the hub graph artifact:
+
+```text
+graph/graph.json
+```
+
+The generated Obsidian `Home.md` gains a Visual Explorer section with a relative link to the dashboard. A researcher can start in Obsidian, scan project/source status, then open the visual explorer to search relationships, filter entity types, and inspect connected context.
+
+The first dashboard uses a compact, work-focused layout:
+
+- top search bar
+- node type filters for Project, Paper, Concept, Collection, and Folder
+- main graph canvas
+- right inspector panel for selected node details and neighbors
+- small graph summary counts
+
+Selecting a node should show its title, type, metadata, and direct neighbors. Selecting a project should make its related papers, concepts, folders, and collections easy to see.
+
+## Data Model
+
+`graph/graph.json` should become the source of truth for the visual explorer.
+
+Nodes should include:
+
+- `id`: stable graph id, such as `project:auditory-demo` or `concept:auditory-brainstem-response`
+- `type`: user-facing type, such as `Project`, `Paper`, `Concept`, `Collection`, or `Folder`
+- `title`: display title
+- `metadata`: optional type-specific details
+
+Relevant metadata may include:
+
+- tags
+- roles
+- Obsidian note path
+- Zotero collection name/key
+- Zotero item key
+- Zotero attachment key
+- DOI
+- folder kind
+- folder path
+
+Edges should include:
+
+- `source`
+- `target`
+- `type`
+
+Initial edge types:
+
+- `uses`: project to source
+- `has_concept`: source or project to concept
+- `in_collection`: source or project to Zotero collection
+- `attached_folder`: project to folder
+
+The graph builder should derive these edges only from explicit registry fields. It should not infer project membership or folder attachment from heuristic matches.
+
+## CLI
+
+Add:
+
+```bash
+research-os build-visual --hub <path>
+```
+
+The command should:
+
+1. load the hub
+2. rebuild `graph/graph.json` using the same graph builder as `research-os build-graph`
+3. write `visual/index.html`
+4. print the generated path and basic graph counts
+
+The first implementation can generate a self-contained HTML file with embedded JavaScript and CSS. It should embed the current graph data in the generated file so the dashboard can open reliably from the local filesystem without a web server.
+
+## Obsidian Integration
+
+Update `build-index` so `Home.md` includes:
+
+- a Visual Explorer section
+- a relative link from the vault home page to `visual/index.html`
+- a short status line showing graph node and edge counts when available
+
+The Obsidian integration should remain generated markdown. No plugin or custom Obsidian runtime is required.
+
+## Template And Demo
+
+The template hub should not need committed visual output. `research-os build-visual` should create the `visual/` directory on first run.
+
+The demo hub should be regenerated so it includes:
+
+- enriched `graph/graph.json`
+- generated `visual/index.html`
+- an updated `Home.md` link to the visual explorer
+
+If hub startup guidance changes, keep these files aligned:
+
+- `src/research_os/template/AGENTS.md`
+- `examples/demo-research-workspace/AGENTS.md`
+
+## Testing
+
+Add focused tests for:
+
+- enriched graph generation from project and source registries
+- concept, collection, and folder node creation
+- edge creation from explicit registry fields
+- `build-visual` writing the expected dashboard file
+- `build-index` rendering the Visual Explorer link without breaking existing Home content
+
+Verification before completion:
+
+```bash
+python -m pytest -v
+python -m compileall -q src
+PYTHONPATH=src python -m research_os.cli --help
+```
+
+Manual verification should include opening the demo `visual/index.html` in a browser and confirming that graph nodes render, filters work, search works, and the inspector updates when a node is selected.
+
+## Implementation Boundaries
+
+Keep the first implementation small and local-first:
+
+- no package manager or frontend build step
+- no external CDN dependency
+- no network calls
+- no server requirement
+- no write operations outside the hub
+
+The visual layer should be replaceable later. The stable contract is the enriched `graph/graph.json`, not the first HTML implementation.
