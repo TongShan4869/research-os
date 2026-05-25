@@ -22,6 +22,23 @@ python -m research_os.cli zotero-status
 python -m research_os.cli doctor --hub ~/ResearchOS
 ```
 
+## Zotero Collection Ingest
+
+With Zotero Desktop running and the local API enabled:
+
+```bash
+python -m research_os.cli ingest-zotero-collection ABR --project auditory-demo --hub ~/ResearchOS
+```
+
+This creates or updates:
+
+- `Sources/Collections/<collection>.md`
+- `Sources/Papers/<citation-key>.md`
+- `registries/sources.yaml`
+- `graph/graph.json`
+
+Paper notes include `zotero_item_key`, `citation_key`, `Open in Zotero`, and `Open PDF in Zotero` links when a PDF attachment is available.
+
 ## Demo
 
 ```bash

@@ -7,9 +7,10 @@ from pathlib import Path
 
 from research_os.config import HubError, load_hub, load_projects, load_sources
 from research_os.graph import build_graph, write_graph
+from research_os.ingest import ingest_zotero_collection
 from research_os.projects import attach_folder, create_project, load_optional_hub, resolve_project
 from research_os.validation import validate_hub
-from research_os.zotero import check_zotero
+from research_os.zotero import ZoteroLocalClient, check_zotero
 
 
 TEMPLATE_DIR = Path(__file__).with_name("template")
@@ -66,6 +67,12 @@ def build_parser() -> argparse.ArgumentParser:
     doctor_parser = subparsers.add_parser("doctor", help="Run Research OS hub and integration checks.")
     add_hub_argument(doctor_parser)
     doctor_parser.set_defaults(handler=run_doctor)
+
+    ingest_collection_parser = subparsers.add_parser("ingest-zotero-collection", help="Create Obsidian notes from a Zotero collection.")
+    ingest_collection_parser.add_argument("collection", help="Zotero collection name or key.")
+    ingest_collection_parser.add_argument("--project", required=True, help="Research OS project id to link papers to.")
+    add_hub_argument(ingest_collection_parser)
+    ingest_collection_parser.set_defaults(handler=run_ingest_zotero_collection)
 
     return parser
 
@@ -219,6 +226,19 @@ def run_doctor(args: argparse.Namespace) -> int:
     zotero_status = check_zotero()
     print(f"Zotero: {zotero_status.message}")
     return 0 if hub_ok and zotero_status.available else 1
+
+
+def run_ingest_zotero_collection(args: argparse.Namespace) -> int:
+    try:
+        hub = load_hub(args.hub)
+        result = ingest_zotero_collection(hub, args.collection, args.project, ZoteroLocalClient())
+    except (HubError, ValueError, OSError) as error:
+        print(f"ingest blocked: {error}")
+        return 1
+    print(f"ingested Zotero collection: {result.collection_name} ({result.collection_key})")
+    print(f"papers: {result.item_count}")
+    print(f"vault: {result.vault_path}")
+    return 0
 
 
 if __name__ == "__main__":
