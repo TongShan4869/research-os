@@ -8,6 +8,7 @@ from typing import Any
 import yaml
 
 from research_os.config import Hub, HubError, load_hub, load_projects, read_yaml_mapping
+from research_os.paths import obsidian_vault_path
 
 
 MARKER_NAME = ".research-os-project.yaml"
@@ -123,7 +124,7 @@ def write_project_note(hub: Hub, project: dict[str, Any]) -> None:
     note_path_value = project.get("obsidian_note")
     if not isinstance(note_path_value, str):
         return
-    note_path = hub.path / "obsidian" / "starter-vault" / note_path_value
+    note_path = obsidian_vault_path(hub) / note_path_value
     if note_path.exists():
         return
     note_path.parent.mkdir(parents=True, exist_ok=True)

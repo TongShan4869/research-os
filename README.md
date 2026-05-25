@@ -18,9 +18,20 @@ python -m research_os.cli new-project auditory-demo --title "Auditory Demo" --hu
 python -m research_os.cli attach-folder auditory-demo ./analysis --kind analysis --hub ~/ResearchOS
 python -m research_os.cli resolve-project ./analysis --hub ~/ResearchOS
 python -m research_os.cli build-graph --hub ~/ResearchOS
+python -m research_os.cli build-index --hub ~/ResearchOS
 python -m research_os.cli zotero-status
 python -m research_os.cli doctor --hub ~/ResearchOS
 ```
+
+## Obsidian Home Index
+
+Use `build-index` to create or refresh `Home.md` in the Obsidian vault:
+
+```bash
+python -m research_os.cli build-index --hub ~/ResearchOS
+```
+
+The generated note summarizes projects, linked Zotero collections, linked source counts, recent source notes, and registry items that need attention.
 
 ## Zotero Collection Ingest
 
@@ -44,4 +55,5 @@ Paper notes include `zotero_item_key`, `citation_key`, `Open in Zotero`, and `Op
 ```bash
 python -m research_os.cli validate --hub examples/demo-research-workspace
 python -m research_os.cli build-graph --hub examples/demo-research-workspace
+python -m research_os.cli build-index --hub examples/demo-research-workspace
 ```

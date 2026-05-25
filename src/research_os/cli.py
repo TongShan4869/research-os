@@ -7,6 +7,7 @@ from pathlib import Path
 
 from research_os.config import HubError, load_hub, load_projects, load_sources
 from research_os.graph import build_graph, write_graph
+from research_os.index import build_index
 from research_os.ingest import ingest_zotero_collection
 from research_os.projects import attach_folder, create_project, load_optional_hub, resolve_project
 from research_os.validation import validate_hub
@@ -60,6 +61,10 @@ def build_parser() -> argparse.ArgumentParser:
     build_graph_parser = subparsers.add_parser("build-graph", help="Build graph/graph.json from Research OS registries.")
     add_hub_argument(build_graph_parser)
     build_graph_parser.set_defaults(handler=run_build_graph)
+
+    build_index_parser = subparsers.add_parser("build-index", help="Build Obsidian Home.md from Research OS registries.")
+    add_hub_argument(build_index_parser)
+    build_index_parser.set_defaults(handler=run_build_index)
 
     zotero_parser = subparsers.add_parser("zotero-status", help="Check Zotero Desktop local API availability.")
     zotero_parser.set_defaults(handler=run_zotero_status)
@@ -198,6 +203,17 @@ def run_build_graph(args: argparse.Namespace) -> int:
     print(f"wrote graph: {graph_path}")
     print(f"nodes: {len(graph['nodes'])}")
     print(f"edges: {len(graph['edges'])}")
+    return 0
+
+
+def run_build_index(args: argparse.Namespace) -> int:
+    try:
+        hub = load_hub(args.hub)
+        index_path = build_index(hub)
+    except HubError as error:
+        print(error)
+        return 1
+    print(f"wrote index: {index_path}")
     return 0
 
 

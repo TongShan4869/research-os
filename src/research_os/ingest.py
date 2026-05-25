@@ -9,6 +9,7 @@ import yaml
 
 from research_os.config import Hub, HubError, load_projects, load_sources
 from research_os.graph import build_graph, write_graph
+from research_os.paths import obsidian_vault_path
 from research_os.projects import find_project
 
 
@@ -70,14 +71,6 @@ def resolve_collection(collections: list[dict[str, Any]], collection_ref: str) -
     if not isinstance(key, str) or not isinstance(name, str):
         raise HubError(f"Zotero collection is missing key or name: {collection_ref}")
     return {"key": key, "name": name}
-
-
-def obsidian_vault_path(hub: Hub) -> Path:
-    configured = hub.config.get("paths", {}).get("obsidian_vault")
-    if isinstance(configured, str) and configured:
-        path = Path(configured).expanduser()
-        return path if path.is_absolute() else hub.path / path
-    return hub.path / "obsidian" / "starter-vault"
 
 
 def source_entry_from_zotero_item(item: dict[str, Any], project_id: str) -> dict[str, Any]:
