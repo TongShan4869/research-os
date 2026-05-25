@@ -16,6 +16,11 @@ def test_init_creates_bootable_hub(tmp_path: Path, capsys):
     assert (hub / "registries" / "sources.yaml").is_file()
     assert (hub / "schemas" / "project.schema.yaml").is_file()
     assert (hub / "graph" / "graph.json").is_file()
+    agents_text = (hub / "AGENTS.md").read_text(encoding="utf-8")
+    assert "indexed research system" in agents_text
+    assert "obsidian/starter-vault/Home.md" in agents_text
+    assert "graph/graph.json" in agents_text
+    assert "resolve it through the registries" in agents_text
     assert "Open Codex" in capsys.readouterr().out
 
 
