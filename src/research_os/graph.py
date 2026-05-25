@@ -177,17 +177,31 @@ def clean_metadata(value: Any) -> dict[str, Any]:
 def folder_items(value: Any) -> list[tuple[str, str]]:
     if not isinstance(value, dict):
         return []
-    return [(key, item) for key, item in value.items() if isinstance(key, str) and isinstance(item, str)]
+    items: list[tuple[str, str]] = []
+    for key, item in value.items():
+        kind = string_value(key)
+        path = string_value(item)
+        if kind is not None and path is not None:
+            items.append((kind, path))
+    return items
 
 
 def string_list(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
-    return [item for item in value if isinstance(item, str)]
+    strings: list[str] = []
+    for item in value:
+        string = string_value(item)
+        if string is not None:
+            strings.append(string)
+    return strings
 
 
 def string_value(value: Any) -> str | None:
-    return value if isinstance(value, str) else None
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
 
 
 def list_value_at(values: list[str], index: int) -> str | None:
