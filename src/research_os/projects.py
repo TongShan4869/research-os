@@ -134,6 +134,8 @@ def write_project_note(hub: Hub, project: dict[str, Any]) -> None:
                 "type: project",
                 f"project_id: {project['id']}",
                 f"status: {project['status']}",
+                "tags:",
+                *[f"  - {tag}" for tag in project_note_tags(project)],
                 "---",
                 "",
                 f"# {project['title']}",
@@ -148,6 +150,35 @@ def write_project_note(hub: Hub, project: dict[str, Any]) -> None:
         ),
         encoding="utf-8",
     )
+
+
+def project_note_tags(project: dict[str, Any]) -> list[str]:
+    project_id = project.get("id")
+    status = project.get("status", "active")
+    tags = ["research-os/project"]
+    if isinstance(project_id, str) and project_id:
+        tags.append(f"project/{project_id}")
+    if isinstance(status, str) and status:
+        tags.append(f"status/{status}")
+    for tag in project.get("tags", []):
+        if isinstance(tag, str) and tag:
+            tags.append(topic_tag(tag))
+    return dedupe(tags)
+
+
+def topic_tag(tag: str) -> str:
+    return tag if "/" in tag else f"topic/{tag}"
+
+
+def dedupe(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    unique_values: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        unique_values.append(value)
+    return unique_values
 
 
 def write_marker(hub: Hub, project_id: str, folder: Path, kind: str) -> None:

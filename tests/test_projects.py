@@ -17,7 +17,13 @@ def test_new_project_adds_registry_entry_and_project_note(tmp_path: Path):
     assert projects[0]["title"] == "Auditory Demo"
     assert projects[0]["status"] == "active"
     assert projects[0]["obsidian_note"] == "Projects/auditory-demo.md"
-    assert (hub / "obsidian" / "starter-vault" / "Projects" / "auditory-demo.md").is_file()
+    project_note = hub / "obsidian" / "starter-vault" / "Projects" / "auditory-demo.md"
+    assert project_note.is_file()
+    note_text = project_note.read_text(encoding="utf-8")
+    assert "tags:" in note_text
+    assert "  - research-os/project" in note_text
+    assert "  - project/auditory-demo" in note_text
+    assert "  - status/active" in note_text
 
 
 def test_new_project_refuses_duplicate_id(tmp_path: Path, capsys):

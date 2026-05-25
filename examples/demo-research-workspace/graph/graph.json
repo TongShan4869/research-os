@@ -4,6 +4,36 @@
       "source": "project:auditory-demo",
       "target": "paper:smith-2024",
       "type": "uses"
+    },
+    {
+      "source": "project:auditory-demo",
+      "target": "paper:shanSubcorticalResponsesMusic2024",
+      "type": "uses"
+    },
+    {
+      "source": "project:auditory-demo",
+      "target": "paper:shanComparingMethodsDeriving2025",
+      "type": "uses"
+    },
+    {
+      "source": "project:auditory-demo",
+      "target": "paper:stollAuditoryBrainstemResponse2025",
+      "type": "uses"
+    },
+    {
+      "source": "project:auditory-demo",
+      "target": "paper:bidelmanMyogenicArtifactsMasquerade2024",
+      "type": "uses"
+    },
+    {
+      "source": "project:auditory-demo",
+      "target": "paper:kulasinghamPredictorsEstimatingSubcortical2024",
+      "type": "uses"
+    },
+    {
+      "source": "project:auditory-demo",
+      "target": "paper:maddoxAuditoryBrainstemResponses2018",
+      "type": "uses"
     }
   ],
   "nodes": [
@@ -15,6 +45,36 @@
     {
       "id": "paper:smith-2024",
       "title": "Auditory Brainstem Responses In Demo Conditions",
+      "type": "Paper"
+    },
+    {
+      "id": "paper:shanSubcorticalResponsesMusic2024",
+      "title": "Subcortical responses to music and speech are alike while cortical responses diverge",
+      "type": "Paper"
+    },
+    {
+      "id": "paper:shanComparingMethodsDeriving2025",
+      "title": "Comparing methods for deriving the auditory brainstem response to continuous speech in human listeners",
+      "type": "Paper"
+    },
+    {
+      "id": "paper:stollAuditoryBrainstemResponse2025",
+      "title": "The auditory brainstem response to natural speech is not affected by selective attention",
+      "type": "Paper"
+    },
+    {
+      "id": "paper:bidelmanMyogenicArtifactsMasquerade2024",
+      "title": "Myogenic artifacts masquerade as neuroplasticity in the auditory frequency-following response",
+      "type": "Paper"
+    },
+    {
+      "id": "paper:kulasinghamPredictorsEstimatingSubcortical2024",
+      "title": "Predictors for estimating subcortical EEG responses to continuous speech",
+      "type": "Paper"
+    },
+    {
+      "id": "paper:maddoxAuditoryBrainstemResponses2018",
+      "title": "Auditory Brainstem Responses to Continuous Natural Speech in Human Listeners",
       "type": "Paper"
     }
   ]

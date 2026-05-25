@@ -5,7 +5,9 @@
   folders:
     analysis: projects/auditory-demo/analysis
   zotero_collections:
-    - Demo Papers
+    - ABR
+  zotero_collection_keys:
+    - G6CDLFHD
   tags:
     - auditory-neuroscience
     - demo

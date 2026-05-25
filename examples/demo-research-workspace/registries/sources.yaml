@@ -7,3 +7,69 @@
     - auditory-demo
   concepts:
     - auditory-brainstem-response
+- id: paper:shanSubcorticalResponsesMusic2024
+  type: Paper
+  title: Subcortical responses to music and speech are alike while cortical responses diverge
+  zotero_item_key: GBEMXBSK
+  zotero_attachment_key: REBSD7ZN
+  citation_key: shanSubcorticalResponsesMusic2024
+  doi: 10.1038/s41598-023-50438-0
+  projects:
+    - auditory-demo
+  concepts:
+    - auditory-brainstem-response
+- id: paper:shanComparingMethodsDeriving2025
+  type: Paper
+  title: Comparing methods for deriving the auditory brainstem response to continuous speech in human listeners
+  zotero_item_key: QGUFNG2Y
+  zotero_attachment_key: VXILSG99
+  citation_key: shanComparingMethodsDeriving2025
+  doi: 10.1162/IMAG.a.19
+  projects:
+    - auditory-demo
+  concepts:
+    - auditory-brainstem-response
+- id: paper:stollAuditoryBrainstemResponse2025
+  type: Paper
+  title: The auditory brainstem response to natural speech is not affected by selective attention
+  zotero_item_key: XHZQBDAK
+  zotero_attachment_key: NWC2ZEEG
+  citation_key: stollAuditoryBrainstemResponse2025
+  doi: 10.1371/journal.pbio.3003407
+  projects:
+    - auditory-demo
+  concepts:
+    - auditory-brainstem-response
+- id: paper:bidelmanMyogenicArtifactsMasquerade2024
+  type: Paper
+  title: Myogenic artifacts masquerade as neuroplasticity in the auditory frequency-following response
+  zotero_item_key: T85T722R
+  zotero_attachment_key: Z5WWLJX3
+  citation_key: bidelmanMyogenicArtifactsMasquerade2024
+  doi: 10.3389/fnins.2024.1422903
+  projects:
+    - auditory-demo
+  concepts:
+    - auditory-brainstem-response
+- id: paper:kulasinghamPredictorsEstimatingSubcortical2024
+  type: Paper
+  title: Predictors for estimating subcortical EEG responses to continuous speech
+  zotero_item_key: JJ5WST9H
+  zotero_attachment_key: 9KBCFZVV
+  citation_key: kulasinghamPredictorsEstimatingSubcortical2024
+  doi: 10.1371/journal.pone.0297826
+  projects:
+    - auditory-demo
+  concepts:
+    - auditory-brainstem-response
+- id: paper:maddoxAuditoryBrainstemResponses2018
+  type: Paper
+  title: Auditory Brainstem Responses to Continuous Natural Speech in Human Listeners
+  zotero_item_key: PV72J5LR
+  zotero_attachment_key: 9H3HK8JL
+  citation_key: maddoxAuditoryBrainstemResponses2018
+  doi: 10.1523/eneuro.0441-17.2018
+  projects:
+    - auditory-demo
+  concepts:
+    - auditory-brainstem-response

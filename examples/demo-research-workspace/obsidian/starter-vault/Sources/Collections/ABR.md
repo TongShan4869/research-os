@@ -1,30 +1,21 @@
 ---
-type: project
-project_id: auditory-demo
-status: active
+type: zotero_collection
+zotero_collection_key: G6CDLFHD
+zotero_collection_name: ABR
+zotero_parent_collection_key: 7HP8BAST
+zotero_parent_collection_name: Audioty System
 tags:
-  - research-os/project
-  - project/auditory-demo
-  - status/active
+  - research-os/zotero-collection
+  - zotero/collection
+  - topic/abr
   - topic/auditory-neuroscience
-  - topic/demo
 ---
 
-# Auditory Demo Project
+# ABR
 
-## Current State
+[Open collection in Zotero](zotero://select/library/collections/G6CDLFHD)
 
-Demo project for validating the first Research OS loop.
-
-## Sources
-
-- [[Sources/Papers/smith-2024|Auditory Brainstem Responses In Demo Conditions]]
-
-## Zotero Collections
-
-- [[Sources/Collections/ABR|ABR]]
-
-## Real ABR Papers
+## Papers
 
 - [[Sources/Papers/shanSubcorticalResponsesMusic2024|Subcortical responses to music and speech are alike while cortical responses diverge]]
 - [[Sources/Papers/shanComparingMethodsDeriving2025|Comparing methods for deriving the auditory brainstem response to continuous speech in human listeners]]
@@ -33,6 +24,6 @@ Demo project for validating the first Research OS loop.
 - [[Sources/Papers/kulasinghamPredictorsEstimatingSubcortical2024|Predictors for estimating subcortical EEG responses to continuous speech]]
 - [[Sources/Papers/maddoxAuditoryBrainstemResponses2018|Auditory Brainstem Responses to Continuous Natural Speech in Human Listeners]]
 
-## Concepts
+## Projects
 
-- [[Concepts/auditory-brainstem-response|Auditory brainstem response]]
+- [[Projects/auditory-demo|Auditory Demo Project]]
