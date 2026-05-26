@@ -17,8 +17,19 @@ def write_visual(hub: Hub, graph: dict[str, list[dict[str, Any]]]) -> Path:
     return visual_path
 
 
+def script_json(value: Any) -> str:
+    return (
+        json.dumps(value, sort_keys=True)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
+
+
 def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
-    graph_json = json.dumps(graph, sort_keys=True)
+    graph_json = script_json(graph)
     type_controls = "\n".join(
         f'          <label><input type="checkbox" value="{node_type}" checked> {node_type}</label>'
         for node_type in NODE_TYPES

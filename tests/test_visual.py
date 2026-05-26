@@ -1,5 +1,4 @@
 from pathlib import Path
-import json
 
 from research_os.cli import main
 from research_os.config import Hub
@@ -7,8 +6,16 @@ from research_os.visual import render_visual_html, write_visual
 
 
 def test_render_visual_html_embeds_graph_data():
+    dangerous_value = "</script><script>alert(1)</script> & <tag>"
     graph = {
-        "nodes": [{"id": "project:demo", "type": "Project", "title": "Demo Project"}],
+        "nodes": [
+            {
+                "id": "project:demo",
+                "type": "Project",
+                "title": dangerous_value,
+                "metadata": {"note": dangerous_value},
+            }
+        ],
         "edges": [{"source": "project:demo", "target": "paper:demo", "type": "uses"}],
     }
 
@@ -16,7 +23,11 @@ def test_render_visual_html_embeds_graph_data():
 
     assert "<title>Research OS Visual Explorer</title>" in html
     assert "const graphData =" in html
-    assert json.dumps(graph, sort_keys=True) in html
+    assert dangerous_value not in html
+    assert (
+        "\\u003c/script\\u003e\\u003cscript\\u003ealert(1)"
+        "\\u003c/script\\u003e \\u0026 \\u003ctag\\u003e"
+    ) in html
     assert "Project" in html
     assert "Paper" in html
     assert "Concept" in html
