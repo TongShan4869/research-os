@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from research_os.config import Hub, load_projects, load_sources
+from research_os.graph import graph_from_registries
 from research_os.paths import obsidian_vault_path
 
 
@@ -18,6 +19,7 @@ def build_index(hub: Hub) -> Path:
 
 
 def render_home(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -> str:
+    graph = graph_from_registries(projects, sources)
     lines = [
         "---",
         "type: research_os_home",
@@ -26,6 +28,11 @@ def render_home(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -
         "---",
         "",
         "# Research OS",
+        "",
+        "## Visual Explorer",
+        "",
+        "- [Open visual explorer](../../visual/index.html)",
+        f"- Graph: {len(graph['nodes'])} nodes, {len(graph['edges'])} edges",
         "",
         "## Projects",
         "",
