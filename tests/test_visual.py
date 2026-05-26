@@ -50,6 +50,10 @@ def test_render_visual_html_embeds_graph_data():
     assert "--dot-soft" in html
     assert "18px 18px" in html
     assert "circle at 50% 50%" not in html
+    assert "background: var(--bg);" in html
+    assert "manualPositions" in html
+    assert "startPan" in html
+    assert "startItemDrag" in html
     assert 'html[data-theme="dark"]' in html
     assert 'html[data-theme="light"]' in html
 

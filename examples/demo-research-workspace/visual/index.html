@@ -93,10 +93,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background:
-        radial-gradient(circle, var(--dot) 1.45px, transparent 1.9px),
-        var(--bg);
-      background-size: 18px 18px, auto;
+      background: var(--bg);
       color: var(--ink);
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 14px;
@@ -248,6 +245,12 @@
       width: 100%;
       height: 100%;
       min-height: 0;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+    svg.panning {
+      cursor: grabbing;
     }
     .edge {
       fill: none;
@@ -282,7 +285,7 @@
       letter-spacing: 0.02em;
     }
     .node {
-      cursor: pointer;
+      cursor: grab;
       transition: opacity 160ms ease;
     }
     .node.dimmed {
@@ -309,7 +312,7 @@
       stroke-width: 4;
     }
     .group-card {
-      cursor: pointer;
+      cursor: grab;
       transition: opacity 160ms ease;
     }
     .group-card.dimmed {
@@ -569,9 +572,14 @@
       selectedId: null,
       selectedGroup: null,
       view: "project",
-      theme: loadTheme()
+      theme: loadTheme(),
+      panByView: {},
+      manualPositions: new Map(),
+      drag: null,
+      suppressClick: false
     };
     const svg = document.getElementById("graph");
+    let graphLayer = svg;
     const summary = document.getElementById("summary");
     const inspector = document.getElementById("inspector");
     const searchInput = document.getElementById("search");
@@ -605,6 +613,14 @@
       applyTheme();
     });
 
+    svg.addEventListener("pointerdown", function (event) {
+      if (event.target.closest(".node, .group-card")) return;
+      startPan(event);
+    });
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", finishPointerDrag);
+    window.addEventListener("pointercancel", finishPointerDrag);
+
     renderFilters();
 
     function loadTheme() {
@@ -625,6 +641,133 @@
       document.querySelectorAll(".mode-toggle [data-view]").forEach(function (item) {
         item.classList.toggle("active", item.getAttribute("data-view") === state.view);
       });
+    }
+
+    function currentPan() {
+      if (!state.panByView[state.view]) {
+        state.panByView[state.view] = { x: 0, y: 0 };
+      }
+      return state.panByView[state.view];
+    }
+
+    function panTransform() {
+      const pan = currentPan();
+      return "translate(" + pan.x + " " + pan.y + ")";
+    }
+
+    function positionKey(id) {
+      return state.view + ":" + id;
+    }
+
+    function applyManualPositions(positions) {
+      Array.from(positions.keys()).forEach(function (id) {
+        const manual = state.manualPositions.get(positionKey(id));
+        if (manual) positions.set(id, { x: manual.x, y: manual.y });
+      });
+    }
+
+    function setManualPosition(id, point) {
+      state.manualPositions.set(positionKey(id), { x: point.x, y: point.y });
+    }
+
+    function appendGraph(element) {
+      graphLayer.appendChild(element);
+      return element;
+    }
+
+    function svgPoint(event) {
+      const rect = svg.getBoundingClientRect();
+      const viewBox = svg.viewBox.baseVal;
+      const width = viewBox && viewBox.width ? viewBox.width : rect.width;
+      const height = viewBox && viewBox.height ? viewBox.height : rect.height;
+      return {
+        x: (event.clientX - rect.left) * width / Math.max(1, rect.width),
+        y: (event.clientY - rect.top) * height / Math.max(1, rect.height)
+      };
+    }
+
+    function graphPoint(event) {
+      const point = svgPoint(event);
+      const pan = currentPan();
+      return { x: point.x - pan.x, y: point.y - pan.y };
+    }
+
+    function startPan(event) {
+      event.preventDefault();
+      const point = svgPoint(event);
+      const pan = currentPan();
+      state.drag = {
+        kind: "pan",
+        startX: point.x,
+        startY: point.y,
+        originX: pan.x,
+        originY: pan.y,
+        moved: false
+      };
+      svg.classList.add("panning");
+    }
+
+    function startItemDrag(event, kind, id, point) {
+      event.preventDefault();
+      event.stopPropagation();
+      const cursor = graphPoint(event);
+      state.drag = {
+        kind: kind,
+        id: id,
+        offsetX: cursor.x - point.x,
+        offsetY: cursor.y - point.y,
+        startX: cursor.x,
+        startY: cursor.y,
+        moved: false
+      };
+      svg.classList.add("panning");
+    }
+
+    function handlePointerMove(event) {
+      if (!state.drag) return;
+      event.preventDefault();
+      if (state.drag.kind === "pan") {
+        const point = svgPoint(event);
+        const dx = point.x - state.drag.startX;
+        const dy = point.y - state.drag.startY;
+        if (Math.abs(dx) + Math.abs(dy) > 3) state.drag.moved = true;
+        state.panByView[state.view] = {
+          x: state.drag.originX + dx,
+          y: state.drag.originY + dy
+        };
+        draw();
+        return;
+      }
+      const cursor = graphPoint(event);
+      const dx = cursor.x - state.drag.startX;
+      const dy = cursor.y - state.drag.startY;
+      if (Math.abs(dx) + Math.abs(dy) > 3) state.drag.moved = true;
+      setManualPosition(state.drag.id, {
+        x: cursor.x - state.drag.offsetX,
+        y: cursor.y - state.drag.offsetY
+      });
+      draw();
+    }
+
+    function finishPointerDrag() {
+      if (!state.drag) return;
+      const drag = state.drag;
+      state.drag = null;
+      svg.classList.remove("panning");
+      state.suppressClick = true;
+      if (!drag.moved) {
+        if (drag.kind === "node") {
+          state.selectedId = drag.id;
+          state.selectedGroup = null;
+        } else if (drag.kind === "group") {
+          state.selectedGroup = drag.id;
+          state.selectedId = null;
+        }
+      }
+      draw();
+      window.setTimeout(function () {
+        state.suppressClick = false;
+      }, 0);
     }
 
     function renderFilters() {
@@ -703,6 +846,8 @@
       const height = svg.clientHeight || 540;
       svg.setAttribute("viewBox", "0 0 " + width + " " + height);
       svg.innerHTML = "";
+      graphLayer = makeSvg("g", { class: "graph-viewport", transform: panTransform() });
+      svg.appendChild(graphLayer);
 
       if (!nodes.length) {
         const empty = makeSvg("text", { x: width / 2, y: height / 2, "text-anchor": "middle", fill: "#667085" });
@@ -719,6 +864,7 @@
       const positions = state.view === "category"
         ? categoryLayout(nodes, width, height)
         : projectLayout(nodes, width, height);
+      applyManualPositions(positions);
       if (state.view === "category") {
         drawCategoryLabels(nodes, positions);
       }
@@ -728,7 +874,7 @@
         const target = positions.get(edge.target);
         if (!source || !target) return;
         const focused = state.selectedId && focusedIds.has(edge.source) && focusedIds.has(edge.target);
-        svg.appendChild(makeSvg("path", {
+        appendGraph(makeSvg("path", {
           class: "edge" + (focused ? " focused" : ""),
           d: curvePath(source, target)
         }));
@@ -742,8 +888,13 @@
           transform: "translate(" + point.x + " " + point.y + ")",
           tabindex: "0"
         });
+        group.addEventListener("pointerdown", function (event) {
+          startItemDrag(event, "node", node.id, point);
+        });
         group.addEventListener("click", function () {
+          if (state.suppressClick) return;
           state.selectedId = node.id;
+          state.selectedGroup = null;
           draw();
         });
         group.addEventListener("keydown", function (event) {
@@ -765,7 +916,7 @@
         const title = shortLabel(node.title || node.id, label.maxLength);
         text.textContent = title;
         group.appendChild(text);
-        svg.appendChild(group);
+        appendGraph(group);
       });
     }
 
@@ -833,7 +984,7 @@
         if (!point) return;
         const label = makeSvg("text", { class: "category-label", x: point.x, y: 36, "text-anchor": "middle" });
         label.textContent = type;
-        svg.appendChild(label);
+        appendGraph(label);
       });
     }
 
@@ -842,6 +993,7 @@
       const groupMap = new Map(groups.map(function (group) { return [group.type, group]; }));
       const cardSize = groupCardSize(width);
       const positions = groupLayout(groups, width, height, cardSize);
+      applyManualPositions(positions);
       const groupedEdges = groupEdges(edges, nodes);
       const focusedGroups = focusedGroupTypes(groupedEdges);
 
@@ -943,16 +1095,16 @@
     function drawGroupEdge(source, target, count, focused, cardSize) {
       const start = groupAnchor(source, target, cardSize.width, cardSize.height);
       const end = groupAnchor(target, source, cardSize.width, cardSize.height);
-      svg.appendChild(makeSvg("path", {
+      appendGraph(makeSvg("path", {
         class: "edge" + (focused ? " focused" : ""),
         d: curvePath(start, end)
       }));
-      svg.appendChild(makeSvg("circle", { class: "anchor-dot", cx: start.x, cy: start.y, r: 4 }));
-      svg.appendChild(makeSvg("circle", { class: "anchor-dot", cx: end.x, cy: end.y, r: 4 }));
+      appendGraph(makeSvg("circle", { class: "anchor-dot", cx: start.x, cy: start.y, r: 4 }));
+      appendGraph(makeSvg("circle", { class: "anchor-dot", cx: end.x, cy: end.y, r: 4 }));
       const labelText = String(count);
       const labelWidth = labelText.length * 7 + 14;
       const label = edgeLabelPoint(start, end);
-      svg.appendChild(makeSvg("rect", {
+      appendGraph(makeSvg("rect", {
         class: "edge-label-bg",
         x: label.x - labelWidth / 2,
         y: label.y - 13,
@@ -962,7 +1114,7 @@
       }));
       const text = makeSvg("text", { class: "edge-label", x: label.x, y: label.y + 2, "text-anchor": "middle" });
       text.textContent = labelText;
-      svg.appendChild(text);
+      appendGraph(text);
     }
 
     function drawGroupCard(group, point, dimmed, cardSize) {
@@ -976,7 +1128,11 @@
         transform: "translate(" + x + " " + y + ")",
         tabindex: "0"
       });
+      card.addEventListener("pointerdown", function (event) {
+        startItemDrag(event, "group", group.type, point);
+      });
       card.addEventListener("click", function () {
+        if (state.suppressClick) return;
         state.selectedGroup = group.type;
         state.selectedId = null;
         draw();
@@ -1016,7 +1172,7 @@
       const count = makeSvg("text", { class: "group-count", x: 22, y: 119 });
       count.textContent = group.count + " " + group.itemLabel;
       card.appendChild(count);
-      svg.appendChild(card);
+      appendGraph(card);
     }
 
     function groupAnchor(source, target, width, height) {
