@@ -16,6 +16,11 @@
       "type": "uses"
     },
     {
+      "source": "project:auditory-demo",
+      "target": "concept:auditory-brainstem-response",
+      "type": "has_concept"
+    },
+    {
       "source": "paper:smith-2024",
       "target": "concept:auditory-brainstem-response",
       "type": "has_concept"

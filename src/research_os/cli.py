@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from research_os.config import HubError, load_hub, load_projects, load_sources
-from research_os.graph import build_graph, write_graph
+from research_os.graph import build_graph, read_graph, write_graph
 from research_os.index import build_index
 from research_os.ingest import ingest_zotero_collection
 from research_os.projects import attach_folder, create_project, load_optional_hub, resolve_project
@@ -225,13 +225,11 @@ def run_build_index(args: argparse.Namespace) -> int:
 def run_build_visual(args: argparse.Namespace) -> int:
     try:
         hub = load_hub(args.hub)
-        graph = build_graph(hub)
-        graph_path = write_graph(hub, graph)
+        graph = read_graph(hub)
         visual_path = write_visual(hub, graph)
     except HubError as error:
         print(error)
         return 1
-    print(f"wrote graph: {graph_path}")
     print(f"wrote visual explorer: {visual_path}")
     print(f"nodes: {len(graph['nodes'])}")
     print(f"edges: {len(graph['edges'])}")

@@ -15,7 +15,7 @@ tags:
 
 | Project | Status | Zotero Collections | Sources | Tags |
 | --- | --- | --- | ---: | --- |
-| [[Projects/auditory-demo|Auditory Demo Project]] | active | [[Sources/Collections/ABR|ABR]] | 7 | auditory-neuroscience, demo |
+| [[Projects/auditory-demo\|Auditory Demo Project]] | active | [[Sources/Collections/ABR\|ABR]] | 7 | auditory-neuroscience, demo |
 
 ## Zotero Collections
 

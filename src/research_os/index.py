@@ -71,12 +71,12 @@ def project_table_rows(projects: list[dict[str, Any]], sources: list[dict[str, A
 def project_table_row(project: dict[str, Any], sources: list[dict[str, Any]]) -> str:
     project_id = string_value(project.get("id"), "unknown")
     title = string_value(project.get("title"), project_id)
-    status = string_value(project.get("status"), "")
+    status = markdown_table_cell(string_value(project.get("status"), ""))
     note_link = obsidian_link(note_target(project.get("obsidian_note"), f"Projects/{project_id}"), title)
-    collections = collection_links(project.get("zotero_collections"))
+    collections = markdown_table_cell(collection_links(project.get("zotero_collections")))
     source_count = sum(1 for source in sources if project_id in string_list(source.get("projects")))
-    tags = ", ".join(string_list(project.get("tags")))
-    return f"| {note_link} | {status} | {collections} | {source_count} | {tags} |"
+    tags = markdown_table_cell(", ".join(string_list(project.get("tags"))))
+    return f"| {markdown_table_cell(note_link)} | {status} | {collections} | {source_count} | {tags} |"
 
 
 def collection_lines(projects: list[dict[str, Any]]) -> list[str]:
@@ -130,6 +130,10 @@ def collection_link(collection: str) -> str:
 
 def obsidian_link(target: str, label: str) -> str:
     return f"[[{target}|{label}]]"
+
+
+def markdown_table_cell(value: str) -> str:
+    return value.replace("|", r"\|")
 
 
 def note_target(value: Any, fallback: str) -> str:

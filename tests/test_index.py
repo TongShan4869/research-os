@@ -49,7 +49,12 @@ def test_build_index_creates_home_note_from_registries(tmp_path: Path):
     assert "[Open visual explorer](../../visual/index.html)" in text
     assert "- Graph: 4 nodes, 2 edges" in text
     assert text.index("# Research OS") < text.index("## Visual Explorer") < text.index("## Projects")
-    assert "| [[Projects/auditory-demo|Auditory Demo]] | active | [[Sources/Collections/ABR|ABR]] | 1 | auditory-neuroscience |" in text
+    project_row = (
+        "| [[Projects/auditory-demo\\|Auditory Demo]] | active | "
+        "[[Sources/Collections/ABR\\|ABR]] | 1 | auditory-neuroscience |"
+    )
+    assert project_row in text
+    assert len(project_row.split(" | ")) == 5
     assert "- [[Sources/Collections/ABR|ABR]]: 1 linked project" in text
     assert "- [[Sources/Papers/shanSubcorticalResponsesMusic2024|Subcortical responses to music and speech are alike while cortical responses diverge]]" in text
     assert "- Sources with no linked project: 1" in text
