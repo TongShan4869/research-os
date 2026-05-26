@@ -179,6 +179,30 @@ def test_build_graph_ignores_blank_explicit_fields_and_deduplicates_edges(tmp_pa
     assert graph["edges"].count({"source": "project:auditory-demo", "target": "paper:smith-2024", "type": "uses"}) == 1
 
 
+def test_build_graph_preserves_collection_key_alignment_with_blank_keys(tmp_path: Path):
+    hub = tmp_path / "ResearchOS"
+    assert main(["init", str(hub)]) == 0
+
+    projects = [
+        {
+            "id": "auditory-demo",
+            "title": "Auditory Demo",
+            "zotero_collections": ["ABR", "Other"],
+            "zotero_collection_keys": ["", "KEY2"],
+        }
+    ]
+    (hub / "registries" / "projects.yaml").write_text(yaml.safe_dump(projects, sort_keys=False), encoding="utf-8")
+
+    assert main(["build-graph", "--hub", str(hub)]) == 0
+
+    graph = json.loads((hub / "graph" / "graph.json").read_text(encoding="utf-8"))
+    nodes_by_id = {node["id"]: node for node in graph["nodes"]}
+
+    assert nodes_by_id["project:auditory-demo"]["metadata"]["zotero_collection_keys"] == ["KEY2"]
+    assert "zotero_collection_key" not in nodes_by_id["collection:ABR"].get("metadata", {})
+    assert nodes_by_id["collection:Other"]["metadata"]["zotero_collection_key"] == "KEY2"
+
+
 def test_zotero_status_reports_availability_without_crashing(capsys):
     exit_code = main(["zotero-status"])
 

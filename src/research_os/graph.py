@@ -24,6 +24,7 @@ def build_graph(hub: Hub) -> dict[str, list[dict[str, Any]]]:
         project_node_id = f"project:{project_id}"
         collections = string_list(project.get("zotero_collections"))
         collection_keys = string_list(project.get("zotero_collection_keys"))
+        project_collections = collection_items(project.get("zotero_collections"), project.get("zotero_collection_keys"))
         concepts = string_list(project.get("concepts"))
         add_node(
             nodes,
@@ -49,7 +50,7 @@ def build_graph(hub: Hub) -> dict[str, list[dict[str, Any]]]:
             add_node(nodes, nodes_by_id, {"id": concept_id, "type": "Concept", "title": concept_title(concept)})
             edges.append(edge(project_node_id, concept_id, "has_concept"))
 
-        for index, collection in enumerate(collections):
+        for collection, collection_key in project_collections:
             collection_id = collection_node_id(collection)
             add_node(
                 nodes,
@@ -59,7 +60,7 @@ def build_graph(hub: Hub) -> dict[str, list[dict[str, Any]]]:
                     "type": "Collection",
                     "title": collection,
                     "metadata": clean_metadata(
-                        {"zotero_collection_key": list_value_at(collection_keys, index)}
+                        {"zotero_collection_key": collection_key}
                     ),
                 },
             )
@@ -186,6 +187,18 @@ def folder_items(value: Any) -> list[tuple[str, str]]:
     return items
 
 
+def collection_items(collections_value: Any, keys_value: Any) -> list[tuple[str, str | None]]:
+    if not isinstance(collections_value, list):
+        return []
+    keys = keys_value if isinstance(keys_value, list) else []
+    items: list[tuple[str, str | None]] = []
+    for index, item in enumerate(collections_value):
+        collection = string_value(item)
+        if collection is not None:
+            items.append((collection, string_value(list_value_at(keys, index))))
+    return items
+
+
 def string_list(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
@@ -204,7 +217,7 @@ def string_value(value: Any) -> str | None:
     return stripped or None
 
 
-def list_value_at(values: list[str], index: int) -> str | None:
+def list_value_at(values: list[Any], index: int) -> Any:
     if 0 <= index < len(values):
         return values[index]
     return None

@@ -81,5 +81,13 @@ def test_ingest_zotero_collection_creates_collection_and_paper_notes(tmp_path: P
         }
     ]
     graph = json.loads((hub / "graph" / "graph.json").read_text(encoding="utf-8"))
-    assert {"id": "paper:shanSubcorticalResponsesMusic2024", "title": "Subcortical responses to music and speech are alike while cortical responses diverge", "type": "Paper"} in graph["nodes"]
+    nodes_by_id = {node["id"]: node for node in graph["nodes"]}
+    source_node = nodes_by_id["paper:shanSubcorticalResponsesMusic2024"]
+    assert source_node["title"] == "Subcortical responses to music and speech are alike while cortical responses diverge"
+    assert source_node["type"] == "Paper"
+    assert source_node["metadata"]["zotero_item_key"] == "GBEMXBSK"
+    assert source_node["metadata"]["zotero_attachment_key"] == "REBSD7ZN"
+    assert source_node["metadata"]["citation_key"] == "shanSubcorticalResponsesMusic2024"
+    assert source_node["metadata"]["doi"] == "10.1038/s41598-023-50438-0"
+    assert source_node["metadata"]["projects"] == ["auditory-demo"]
     assert {"source": "project:auditory-demo", "target": "paper:shanSubcorticalResponsesMusic2024", "type": "uses"} in graph["edges"]
