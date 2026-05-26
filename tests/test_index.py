@@ -43,6 +43,9 @@ def test_build_index_creates_home_note_from_registries(tmp_path: Path):
     text = home.read_text(encoding="utf-8")
     assert "type: research_os_home" in text
     assert "# Research OS" in text
+    assert "## Visual Explorer" in text
+    assert "[Open visual explorer](../../visual/index.html)" in text
+    assert "Graph: " in text
     assert "| [[Projects/auditory-demo|Auditory Demo]] | active | [[Sources/Collections/ABR|ABR]] | 1 | auditory-neuroscience |" in text
     assert "- [[Sources/Collections/ABR|ABR]]: 1 linked project" in text
     assert "- [[Sources/Papers/shanSubcorticalResponsesMusic2024|Subcortical responses to music and speech are alike while cortical responses diverge]]" in text
