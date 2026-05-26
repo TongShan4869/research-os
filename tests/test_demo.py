@@ -60,3 +60,14 @@ def test_demo_links_real_zotero_abr_collection():
     assert "zotero_attachment_key: REBSD7ZN" in paper_note.read_text(encoding="utf-8")
     assert "zotero://select/library/items/GBEMXBSK" in paper_note.read_text(encoding="utf-8")
     assert "zotero://open-pdf/library/items/REBSD7ZN" in paper_note.read_text(encoding="utf-8")
+
+
+def test_demo_workspace_builds_visual_explorer():
+    repo = Path(__file__).resolve().parents[1]
+    demo = repo / "examples" / "demo-research-workspace"
+
+    assert main(["build-visual", "--hub", str(demo)]) == 0
+    assert (demo / "visual" / "index.html").is_file()
+    visual_html = (demo / "visual" / "index.html").read_text(encoding="utf-8")
+    assert "Research OS Visual Explorer" in visual_html
+    assert "Auditory Demo Project" in visual_html
