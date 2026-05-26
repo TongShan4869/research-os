@@ -377,13 +377,13 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
     }}
     .group-title {{
       fill: var(--ink);
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 720;
     }}
     .group-description,
     .group-count {{
       fill: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
     }}
     aside {{
       border-left: 1px solid var(--line);
@@ -1067,7 +1067,7 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
 
     function groupCardSize(width) {{
       return {{
-        width: Math.max(230, Math.min(300, width * 0.31)),
+        width: Math.max(280, Math.min(340, width * 0.34)),
         height: 132
       }};
     }}
@@ -1155,6 +1155,7 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
       const x = point.x - width / 2;
       const y = point.y - height / 2;
       const selected = state.selectedGroup === group.type;
+      const clipId = "group-card-clip-" + safeDomId(group.type);
       const card = makeSvg("g", {{
         class: "group-card" + (selected ? " selected" : "") + (dimmed ? " dimmed" : ""),
         transform: "translate(" + x + " " + y + ")",
@@ -1177,6 +1178,11 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
           draw();
         }}
       }});
+      const defs = makeSvg("defs", {{}});
+      const clipPath = makeSvg("clipPath", {{ id: clipId }});
+      clipPath.appendChild(makeSvg("rect", {{ x: 0, y: 0, width: width, height: height, rx: 13 }}));
+      defs.appendChild(clipPath);
+      card.appendChild(defs);
       card.appendChild(makeSvg("rect", {{ class: "card", x: 0, y: 0, width: width, height: height, rx: 13 }}));
       card.appendChild(makeSvg("rect", {{
         class: "stripe",
@@ -1184,7 +1190,7 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
         y: 0,
         width: 8,
         height: height,
-        rx: 7,
+        "clip-path": "url(#" + clipId + ")",
         fill: colors[group.type] || "#64748b"
       }}));
       const kind = makeSvg("text", {{ class: "group-kind", x: 22, y: 32 }});
@@ -1194,9 +1200,9 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
       badge.textContent = group.badge;
       card.appendChild(badge);
       const title = makeSvg("text", {{ class: "group-title", x: 22, y: 62 }});
-      title.textContent = shortLabel(group.title, 30);
+      title.textContent = shortLabel(group.title, Math.floor((width - 44) / 9.5));
       card.appendChild(title);
-      wrapText(group.description, 44, 2).forEach(function (line, index) {{
+      wrapText(group.description, Math.floor((width - 44) / 7.4), 2).forEach(function (line, index) {{
         const description = makeSvg("text", {{ class: "group-description", x: 22, y: 86 + index * 17 }});
         description.textContent = line;
         card.appendChild(description);
@@ -1402,6 +1408,10 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
     function shortLabel(value, maxLength) {{
       const limit = maxLength || 28;
       return value.length > limit ? value.slice(0, Math.max(1, limit - 3)) + "..." : value;
+    }}
+
+    function safeDomId(value) {{
+      return String(value).replace(/[^a-zA-Z0-9_-]/g, "-");
     }}
 
     function wrapText(value, maxLength, maxLines) {{
