@@ -14,7 +14,12 @@ def test_render_visual_html_embeds_graph_data():
                 "type": "Project",
                 "title": dangerous_value,
                 "metadata": {"note": dangerous_value},
-            }
+            },
+            {"id": "paper:demo", "type": "Paper", "title": "Paper Demo"},
+            {"id": "concept:demo", "type": "Concept", "title": "Concept Demo"},
+            {"id": "collection:demo", "type": "Collection", "title": "Collection Demo"},
+            {"id": "folder:demo", "type": "Folder", "title": "Folder Demo"},
+            {"id": "dataset:demo", "type": "Dataset", "title": "Dataset Demo"},
         ],
         "edges": [{"source": "project:demo", "target": "paper:demo", "type": "uses"}],
     }
@@ -33,6 +38,8 @@ def test_render_visual_html_embeds_graph_data():
     assert "Concept" in html
     assert "Collection" in html
     assert "Folder" in html
+    assert "Dataset" in html
+    assert "deriveNodeTypes(graphData.nodes)" in html
 
 
 def test_write_visual_creates_visual_index(tmp_path: Path):

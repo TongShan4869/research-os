@@ -20,6 +20,7 @@ def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str
     nodes: list[dict[str, Any]] = []
     nodes_by_id: dict[str, dict[str, Any]] = {}
     edges: list[dict[str, Any]] = []
+    known_collection_keys = collection_keys_by_name(projects)
 
     for project in projects:
         project_id = string_value(project.get("id"))
@@ -31,6 +32,7 @@ def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str
         collections = string_list(project.get("zotero_collections"))
         collection_keys = aligned_string_list(project.get("zotero_collection_keys"))
         project_collections = collection_items(project.get("zotero_collections"), project.get("zotero_collection_keys"))
+        project_collection_key_by_name = first_collection_key_by_name(project_collections)
         concepts = string_list(project.get("concepts"))
         add_node(
             nodes,
@@ -56,8 +58,11 @@ def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str
             add_node(nodes, nodes_by_id, {"id": concept_id, "type": "Concept", "title": concept_title(concept)})
             edges.append(edge(project_node_id, concept_id, "has_concept"))
 
-        for collection, collection_key in project_collections:
-            collection_id = collection_node_id(collection)
+        for collection, collection_key, has_explicit_blank_key in project_collections:
+            stable_key = collection_key or (
+                None if has_explicit_blank_key else project_collection_key_by_name.get(collection)
+            )
+            collection_id = collection_node_id(collection, stable_key)
             add_node(
                 nodes,
                 nodes_by_id,
@@ -65,9 +70,7 @@ def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str
                     "id": collection_id,
                     "type": "Collection",
                     "title": collection,
-                    "metadata": clean_metadata(
-                        {"zotero_collection_key": collection_key}
-                    ),
+                    "metadata": clean_metadata({"zotero_collection_key": collection_key}),
                 },
             )
             edges.append(edge(project_node_id, collection_id, "in_collection"))
@@ -96,6 +99,7 @@ def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str
         projects_for_source = string_list(source.get("projects"))
         concepts = string_list(source.get("concepts"))
         collections = string_list(source.get("zotero_collections"))
+        source_collections = collection_items(source.get("zotero_collections"), source.get("zotero_collection_keys"))
         add_node(
             nodes,
             nodes_by_id,
@@ -127,9 +131,19 @@ def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str
             add_node(nodes, nodes_by_id, {"id": concept_id, "type": "Concept", "title": concept_title(concept)})
             edges.append(edge(source_id, concept_id, "has_concept"))
 
-        for collection in collections:
-            collection_id = collection_node_id(collection)
-            add_node(nodes, nodes_by_id, {"id": collection_id, "type": "Collection", "title": collection})
+        for collection, collection_key, has_explicit_blank_key in source_collections:
+            known_key = collection_key or (None if has_explicit_blank_key else known_collection_keys.get(collection))
+            collection_id = collection_node_id(collection, known_key)
+            add_node(
+                nodes,
+                nodes_by_id,
+                {
+                    "id": collection_id,
+                    "type": "Collection",
+                    "title": collection,
+                    "metadata": clean_metadata({"zotero_collection_key": known_key}),
+                },
+            )
             edges.append(edge(source_id, collection_id, "in_collection"))
 
     return {"nodes": nodes, "edges": dedupe_edges(edges)}
@@ -193,16 +207,46 @@ def folder_items(value: Any) -> list[tuple[str, str]]:
     return items
 
 
-def collection_items(collections_value: Any, keys_value: Any) -> list[tuple[str, str | None]]:
+def collection_items(collections_value: Any, keys_value: Any) -> list[tuple[str, str | None, bool]]:
     if not isinstance(collections_value, list):
         return []
     keys = keys_value if isinstance(keys_value, list) else []
-    items: list[tuple[str, str | None]] = []
+    items: list[tuple[str, str | None, bool]] = []
     for index, item in enumerate(collections_value):
         collection = string_value(item)
         if collection is not None:
-            items.append((collection, string_value(list_value_at(keys, index))))
+            raw_key = list_value_at(keys, index)
+            has_explicit_blank_key = isinstance(raw_key, str) and string_value(raw_key) is None
+            collection_key = string_value(raw_key)
+            items.append((collection, collection_key, has_explicit_blank_key))
     return items
+
+
+def first_collection_key_by_name(collections: list[tuple[str, str | None, bool]]) -> dict[str, str]:
+    keys_by_name: dict[str, str] = {}
+    for collection, collection_key, _has_explicit_blank_key in collections:
+        if collection_key is not None and collection not in keys_by_name:
+            keys_by_name[collection] = collection_key
+    return keys_by_name
+
+
+def collection_keys_by_name(projects: list[dict[str, Any]]) -> dict[str, str]:
+    keys_by_name: dict[str, set[str]] = {}
+    names_with_explicit_blank: set[str] = set()
+    for project in projects:
+        for collection, collection_key, has_explicit_blank_key in collection_items(
+            project.get("zotero_collections"), project.get("zotero_collection_keys")
+        ):
+            if has_explicit_blank_key:
+                names_with_explicit_blank.add(collection)
+            if collection_key is None:
+                continue
+            keys_by_name.setdefault(collection, set()).add(collection_key)
+    return {
+        name: next(iter(keys))
+        for name, keys in keys_by_name.items()
+        if len(keys) == 1 and name not in names_with_explicit_blank
+    }
 
 
 def aligned_string_list(value: Any) -> list[str]:
@@ -242,8 +286,9 @@ def concept_node_id(concept: str) -> str:
     return f"concept:{safe_id(concept)}"
 
 
-def collection_node_id(collection: str) -> str:
-    return f"collection:{safe_id(collection)}"
+def collection_node_id(collection: str, collection_key: str | None = None) -> str:
+    stable_value = collection_key or collection
+    return f"collection:{safe_id(stable_value)}"
 
 
 def concept_title(concept: str) -> str:

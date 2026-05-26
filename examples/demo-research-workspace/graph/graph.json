@@ -2,7 +2,7 @@
   "edges": [
     {
       "source": "project:auditory-demo",
-      "target": "collection:ABR",
+      "target": "collection:G6CDLFHD",
       "type": "in_collection"
     },
     {
@@ -102,7 +102,7 @@
       "type": "Project"
     },
     {
-      "id": "collection:ABR",
+      "id": "collection:G6CDLFHD",
       "metadata": {
         "zotero_collection_key": "G6CDLFHD"
       },

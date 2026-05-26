@@ -7,7 +7,7 @@ from typing import Any
 from research_os.config import Hub
 
 
-NODE_TYPES = ("Project", "Paper", "Concept", "Collection", "Folder")
+PREFERRED_NODE_TYPES = ("Project", "Paper", "Concept", "Collection", "Folder")
 
 
 def write_visual(hub: Hub, graph: dict[str, list[dict[str, Any]]]) -> Path:
@@ -30,10 +30,6 @@ def script_json(value: Any) -> str:
 
 def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
     graph_json = script_json(graph)
-    type_controls = "\n".join(
-        f'          <label><input type="checkbox" value="{node_type}" checked> {node_type}</label>'
-        for node_type in NODE_TYPES
-    )
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -247,7 +243,6 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
       <h1>Research OS Visual Explorer</h1>
       <input class="search" id="search" type="search" placeholder="Search graph">
       <div class="filters" id="filters" aria-label="Node type filters">
-{type_controls}
       </div>
     </header>
     <main>
@@ -263,7 +258,8 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
   </div>
   <script>
     const graphData = {graph_json};
-    const nodeTypes = {json.dumps(list(NODE_TYPES))};
+    const preferredNodeTypes = {json.dumps(list(PREFERRED_NODE_TYPES))};
+    const nodeTypes = deriveNodeTypes(graphData.nodes);
     const colors = {{
       Project: "#0f766e",
       Paper: "#2563eb",
@@ -280,23 +276,40 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
     const summary = document.getElementById("summary");
     const inspector = document.getElementById("inspector");
     const searchInput = document.getElementById("search");
-    const filterInputs = Array.from(document.querySelectorAll("#filters input"));
+    const filters = document.getElementById("filters");
 
     searchInput.addEventListener("input", function (event) {{
       state.search = event.target.value.trim().toLowerCase();
       draw();
     }});
 
-    filterInputs.forEach(function (input) {{
-      input.addEventListener("change", function () {{
-        if (input.checked) {{
-          state.activeTypes.add(input.value);
-        }} else {{
-          state.activeTypes.delete(input.value);
-        }}
-        draw();
+    renderFilters();
+
+    function renderFilters() {{
+      filters.innerHTML = nodeTypes.map(function (nodeType) {{
+        return '<label><input type="checkbox" value="' + escapeHtml(nodeType) + '" checked> ' +
+          escapeHtml(nodeType) + '</label>';
+      }}).join("");
+      Array.from(filters.querySelectorAll("input")).forEach(function (input) {{
+        input.addEventListener("change", function () {{
+          if (input.checked) {{
+            state.activeTypes.add(input.value);
+          }} else {{
+            state.activeTypes.delete(input.value);
+          }}
+          draw();
+        }});
       }});
-    }});
+    }}
+
+    function deriveNodeTypes(nodes) {{
+      const discovered = new Set(nodes.map(function (node) {{ return node.type || "Paper"; }}));
+      const preferred = preferredNodeTypes.filter(function (nodeType) {{ return discovered.has(nodeType); }});
+      const custom = Array.from(discovered)
+        .filter(function (nodeType) {{ return !preferredNodeTypes.includes(nodeType); }})
+        .sort(function (left, right) {{ return left.localeCompare(right); }});
+      return preferred.concat(custom);
+    }}
 
     function visibleNodes() {{
       return graphData.nodes.filter(function (node) {{
