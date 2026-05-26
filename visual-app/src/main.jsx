@@ -83,20 +83,8 @@ function truncate(text, max = 42) {
   return text.length > max ? `${text.slice(0, max - 1)}...` : text;
 }
 
-function getMetadataList(node, key) {
-  const value = node?.metadata?.[key];
-  return Array.isArray(value) ? value.filter(Boolean) : [];
-}
-
-function projectIdFromNode(node) {
-  return node?.id?.startsWith("project:") ? node.id.slice("project:".length) : node?.id;
-}
-
 function projectIdsForPaper(graph, paper) {
   const projectIds = new Set();
-  for (const projectId of getMetadataList(paper, "projects")) {
-    projectIds.add(`project:${projectId}`);
-  }
   for (const edge of graph.edges) {
     if (edge.target === paper.id && nodeType(graph.byId.get(edge.source)) === "Project") {
       projectIds.add(edge.source);
@@ -127,19 +115,6 @@ function buildProjectConnections(graph, visibleIds) {
     if (nodeType(source) === "Project" && nodeType(target) === "Paper") papersByProject.get(source.id)?.push(target);
     if (nodeType(source) === "Project" && nodeType(target) === "Concept") conceptsByProject.get(source.id)?.push(target);
     if (nodeType(source) === "Project" && nodeType(target) === "Collection") collectionsByProject.get(source.id)?.push(target);
-    if (nodeType(source) === "Paper") {
-      for (const projectId of getMetadataList(source, "projects")) {
-        const fullId = `project:${projectId}`;
-        if (papersByProject.has(fullId)) papersByProject.get(fullId).push(source);
-      }
-    }
-  }
-
-  for (const paper of paperNodes) {
-    for (const projectId of getMetadataList(paper, "projects")) {
-      const fullId = `project:${projectId}`;
-      if (papersByProject.has(fullId)) papersByProject.get(fullId).push(paper);
-    }
   }
 
   for (const concept of conceptNodes) {
@@ -176,22 +151,12 @@ function buildProjectConnections(graph, visibleIds) {
 
 function collectionGroups(graph, visibleIds) {
   const collections = graph.nodes.filter((node) => nodeType(node) === "Collection" && visibleIds.has(node.id));
-  const papers = graph.nodes.filter((node) => nodeType(node) === "Paper" && visibleIds.has(node.id));
   const byTitle = new Map(collections.map((node) => [nodeTitle(node), { collection: node, papers: [] }]));
   const byId = new Map(collections.map((node) => [node.id, byTitle.get(nodeTitle(node))]));
 
   function addPaper(group, paper) {
     if (!group || !paper || !visibleIds.has(paper.id)) return;
     if (!group.papers.some((item) => item.id === paper.id)) group.papers.push(paper);
-  }
-
-  for (const paper of papers) {
-    for (const title of getMetadataList(paper, "zotero_collections")) {
-      if (!byTitle.has(title)) {
-        byTitle.set(title, { collection: { id: `collection:${title}`, type: "Collection", title }, papers: [] });
-      }
-      addPaper(byTitle.get(title), paper);
-    }
   }
 
   const papersByProject = new Map();
@@ -216,14 +181,6 @@ function collectionGroups(graph, visibleIds) {
     }
   }
 
-  for (const paper of papers) {
-    for (const projectId of getMetadataList(paper, "projects")) {
-      const fullProjectId = `project:${projectId}`;
-      if (!papersByProject.has(fullProjectId)) papersByProject.set(fullProjectId, []);
-      papersByProject.get(fullProjectId).push(paper);
-    }
-  }
-
   for (const [collectionId, projectIds] of collectionProjects.entries()) {
     const group = byId.get(collectionId);
     for (const projectId of projectIds) {
@@ -236,7 +193,6 @@ function collectionGroups(graph, visibleIds) {
 
 function conceptClusters(graph, visibleIds) {
   const concepts = graph.nodes.filter((node) => nodeType(node) === "Concept" && visibleIds.has(node.id));
-  const papers = graph.nodes.filter((node) => nodeType(node) === "Paper" && visibleIds.has(node.id));
   const byConcept = new Map(concepts.map((node) => [nodeTitle(node).toLowerCase(), { concept: node, papers: [], projects: new Set() }]));
 
   for (const edge of graph.edges) {
@@ -247,18 +203,6 @@ function conceptClusters(graph, visibleIds) {
       const cluster = byConcept.get(nodeTitle(target).toLowerCase());
       if (nodeType(source) === "Paper") cluster.papers.push(source);
       if (nodeType(source) === "Project") cluster.projects.add(source.id);
-    }
-  }
-
-  for (const paper of papers) {
-    for (const concept of getMetadataList(paper, "concepts")) {
-      const key = concept.replaceAll("-", " ").toLowerCase();
-      for (const [clusterKey, cluster] of byConcept.entries()) {
-        if (clusterKey === key || clusterKey.includes(key) || key.includes(clusterKey)) {
-          cluster.papers.push(paper);
-          for (const projectId of getMetadataList(paper, "projects")) cluster.projects.add(`project:${projectId}`);
-        }
-      }
     }
   }
 

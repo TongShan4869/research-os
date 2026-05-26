@@ -125,6 +125,8 @@ def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str
 
         for project_id in projects_for_source:
             edges.append(edge(f"project:{project_id}", source_id, "uses"))
+            for concept in concepts:
+                edges.append(edge(f"project:{project_id}", concept_node_id(concept), "has_concept"))
 
         for concept in concepts:
             concept_id = concept_node_id(concept)
@@ -305,3 +307,16 @@ def write_graph(hub: Hub, graph: dict[str, list[dict[str, Any]]]) -> Path:
     graph_path.parent.mkdir(parents=True, exist_ok=True)
     graph_path.write_text(json.dumps(graph, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return graph_path
+
+
+def read_graph(hub: Hub) -> Graph:
+    graph_path = hub.path / "graph" / "graph.json"
+    data = json.loads(graph_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        return {"nodes": [], "edges": []}
+    nodes = data.get("nodes")
+    edges = data.get("edges")
+    return {
+        "nodes": nodes if isinstance(nodes, list) else [],
+        "edges": edges if isinstance(edges, list) else [],
+    }

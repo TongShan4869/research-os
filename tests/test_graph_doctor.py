@@ -108,6 +108,11 @@ def test_build_graph_emits_research_context_nodes_and_edges(tmp_path: Path):
     assert {"source": "project:auditory-demo", "target": "paper:smith-2024", "type": "uses"} in graph["edges"]
     assert {"source": "project:auditory-demo", "target": "concept:auditory-system", "type": "has_concept"} in graph["edges"]
     assert {
+        "source": "project:auditory-demo",
+        "target": "concept:auditory-brainstem-response",
+        "type": "has_concept",
+    } in graph["edges"]
+    assert {
         "source": "paper:smith-2024",
         "target": "concept:auditory-brainstem-response",
         "type": "has_concept",

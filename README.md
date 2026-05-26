@@ -179,7 +179,7 @@ Open the vault folder in Obsidian to inspect notes and Graph View.
 visual/index.html
 ```
 
-The visual explorer is a static React Flow page generated from `graph/graph.json`. It is designed as a research board:
+The visual explorer is a static React Flow page generated from the current `graph/graph.json`. Run `research-os build-graph` when the hub knowledge graph needs to change; `research-os build-visual` only packages that graph for browsing. It is designed as a research board:
 
 - `Zotero Library` is the canonical home for paper collections and paper pills.
 - `Global Wiki` is the canonical home for concepts.
