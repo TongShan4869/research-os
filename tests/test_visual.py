@@ -40,6 +40,11 @@ def test_render_visual_html_embeds_graph_data():
     assert "Folder" in html
     assert "Dataset" in html
     assert "deriveNodeTypes(graphData.nodes)" in html
+    assert 'data-view="project"' in html
+    assert 'data-view="category"' in html
+    assert "Theme: System" in html
+    assert 'html[data-theme="dark"]' in html
+    assert 'html[data-theme="light"]' in html
 
 
 def test_write_visual_creates_visual_index(tmp_path: Path):

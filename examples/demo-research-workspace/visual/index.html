@@ -6,39 +6,123 @@
   <title>Research OS Visual Explorer</title>
   <style>
     :root {
-      color-scheme: light;
-      --bg: #f7f8fa;
-      --panel: #ffffff;
-      --ink: #1f2937;
+      color-scheme: light dark;
+      --bg: #eef1f4;
+      --bg-pattern: rgba(25, 35, 48, 0.045);
+      --panel: #fbfcfd;
+      --panel-strong: #ffffff;
+      --panel-soft: #f2f5f7;
+      --ink: #111827;
       --muted: #667085;
-      --line: #d0d5dd;
+      --line: #d2d8df;
+      --line-strong: #a8b3bf;
       --accent: #0f766e;
+      --accent-strong: #115e59;
       --accent-soft: #ccfbf1;
-      --shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
+      --chip: #eef4f4;
+      --shadow: 0 18px 60px rgba(17, 24, 39, 0.10);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --edge: rgba(82, 98, 113, 0.42);
+      --edge-focus: rgba(15, 118, 110, 0.72);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1216;
+        --bg-pattern: rgba(237, 242, 247, 0.035);
+        --panel: #171b21;
+        --panel-strong: #1f242c;
+        --panel-soft: #12161c;
+        --ink: #f3f6f8;
+        --muted: #a3adb9;
+        --line: #303843;
+        --line-strong: #4a5564;
+        --accent: #4fd1c5;
+        --accent-strong: #8ee7df;
+        --accent-soft: rgba(79, 209, 197, 0.13);
+        --chip: #202832;
+        --shadow: 0 18px 80px rgba(0, 0, 0, 0.44);
+        --edge: rgba(183, 197, 211, 0.24);
+        --edge-focus: rgba(79, 209, 197, 0.76);
+      }
+    }
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg: #eef1f4;
+      --bg-pattern: rgba(25, 35, 48, 0.045);
+      --panel: #fbfcfd;
+      --panel-strong: #ffffff;
+      --panel-soft: #f2f5f7;
+      --ink: #111827;
+      --muted: #667085;
+      --line: #d2d8df;
+      --line-strong: #a8b3bf;
+      --accent: #0f766e;
+      --accent-strong: #115e59;
+      --accent-soft: #ccfbf1;
+      --chip: #eef4f4;
+      --shadow: 0 18px 60px rgba(17, 24, 39, 0.10);
+      --edge: rgba(82, 98, 113, 0.42);
+      --edge-focus: rgba(15, 118, 110, 0.72);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0f1216;
+      --bg-pattern: rgba(237, 242, 247, 0.035);
+      --panel: #171b21;
+      --panel-strong: #1f242c;
+      --panel-soft: #12161c;
+      --ink: #f3f6f8;
+      --muted: #a3adb9;
+      --line: #303843;
+      --line-strong: #4a5564;
+      --accent: #4fd1c5;
+      --accent-strong: #8ee7df;
+      --accent-soft: rgba(79, 209, 197, 0.13);
+      --chip: #202832;
+      --shadow: 0 18px 80px rgba(0, 0, 0, 0.44);
+      --edge: rgba(183, 197, 211, 0.24);
+      --edge-focus: rgba(79, 209, 197, 0.76);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      background: var(--bg);
+      background:
+        linear-gradient(var(--bg-pattern) 1px, transparent 1px),
+        linear-gradient(90deg, var(--bg-pattern) 1px, transparent 1px),
+        radial-gradient(circle at 20% 10%, var(--accent-soft), transparent 30%),
+        var(--bg);
+      background-size: 36px 36px, 36px 36px, auto, auto;
       color: var(--ink);
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 14px;
     }
     .app {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
+      grid-template-columns: minmax(0, 1fr) 360px;
       grid-template-rows: auto minmax(0, 1fr);
+      height: 100dvh;
       min-height: 100vh;
+      overflow: hidden;
     }
     header {
       grid-column: 1 / -1;
-      display: flex;
+      display: grid;
+      grid-template-columns: auto auto minmax(220px, 1fr) auto;
       align-items: center;
-      gap: 16px;
-      padding: 12px 16px;
+      gap: 12px;
+      padding: 12px 14px;
       border-bottom: 1px solid var(--line);
-      background: var(--panel);
+      background: color-mix(in srgb, var(--panel) 94%, transparent);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+    .brand {
+      min-width: 178px;
     }
     h1 {
       margin: 0;
@@ -46,45 +130,94 @@
       font-weight: 700;
       white-space: nowrap;
     }
+    .subtitle {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .mode-toggle {
+      display: inline-flex;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--panel-soft);
+    }
+    .mode-toggle button,
+    .theme-toggle {
+      border: 0;
+      border-radius: calc(var(--radius-sm) - 3px);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font: inherit;
+      padding: 8px 10px;
+      white-space: nowrap;
+    }
+    .mode-toggle button.active,
+    .theme-toggle {
+      background: var(--panel-strong);
+      color: var(--ink);
+      box-shadow: 0 1px 0 rgba(17, 24, 39, 0.08);
+    }
+    .theme-toggle {
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
     .search {
       flex: 1;
       min-width: 160px;
-      max-width: 520px;
+      width: 100%;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
       font: inherit;
+      color: var(--ink);
+      background: var(--panel-strong);
+      outline: none;
+    }
+    .search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
     .filters {
+      grid-column: 1 / -1;
       display: flex;
       flex-wrap: wrap;
-      gap: 8px 12px;
+      gap: 8px;
       color: var(--muted);
     }
     .filters label {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       white-space: nowrap;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--chip);
+      padding: 6px 9px;
+    }
+    .filters input {
+      accent-color: var(--accent);
     }
     main {
       display: grid;
       grid-template-rows: auto minmax(0, 1fr);
       min-width: 0;
+      min-height: 0;
       padding: 12px;
       gap: 12px;
+      overflow: hidden;
     }
     .summary {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
       gap: 8px;
     }
     .stat {
-      min-width: 96px;
-      padding: 8px 10px;
+      padding: 10px 12px;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      background: var(--panel);
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--panel-strong) 88%, transparent);
       box-shadow: var(--shadow);
     }
     .stat strong {
@@ -97,30 +230,48 @@
       font-size: 12px;
     }
     .graph-shell {
-      min-height: 520px;
+      min-height: 0;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      background: var(--panel);
+      border-radius: var(--radius-lg);
+      background:
+        radial-gradient(circle at 50% 50%, var(--accent-soft), transparent 42%),
+        var(--panel);
       overflow: hidden;
       box-shadow: var(--shadow);
+      position: relative;
     }
     svg {
       display: block;
       width: 100%;
       height: 100%;
-      min-height: 520px;
+      min-height: 0;
     }
     .edge {
-      stroke: #98a2b3;
-      stroke-width: 1.4;
+      fill: none;
+      stroke: var(--edge);
+      stroke-width: 1.25;
+    }
+    .edge.focused {
+      stroke: var(--edge-focus);
+      stroke-width: 2;
+    }
+    .category-label {
+      fill: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
     }
     .node {
       cursor: pointer;
+      transition: opacity 160ms ease;
+    }
+    .node.dimmed {
+      opacity: 0.28;
     }
     .node circle {
-      stroke: #ffffff;
+      stroke: var(--panel-strong);
       stroke-width: 2;
-      filter: drop-shadow(0 1px 1px rgba(16, 24, 40, 0.18));
+      filter: drop-shadow(0 8px 18px rgba(16, 24, 40, 0.18));
     }
     .node text {
       pointer-events: none;
@@ -128,14 +279,20 @@
       font-size: 12px;
       font-weight: 650;
     }
+    .node .label-bg {
+      fill: color-mix(in srgb, var(--panel-strong) 90%, transparent);
+      stroke: var(--line);
+      stroke-width: 1;
+    }
     .node.selected circle {
       stroke: var(--accent);
       stroke-width: 4;
     }
     aside {
       border-left: 1px solid var(--line);
-      background: var(--panel);
+      background: color-mix(in srgb, var(--panel) 95%, transparent);
       padding: 16px;
+      min-height: 0;
       overflow: auto;
     }
     .inspector-title {
@@ -161,8 +318,8 @@
     dl {
       margin: 0;
       display: grid;
-      grid-template-columns: 92px minmax(0, 1fr);
-      gap: 6px 10px;
+      grid-template-columns: 110px minmax(0, 1fr);
+      gap: 8px 12px;
     }
     dt {
       color: var(--muted);
@@ -182,17 +339,31 @@
     code {
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
-      background: #f2f4f7;
+      background: var(--panel-soft);
       border-radius: 4px;
       padding: 1px 4px;
+    }
+    .neighbor-list {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .neighbor-list li {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--panel-soft);
+      padding: 9px 10px;
     }
     @media (max-width: 880px) {
       .app {
         grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
       }
       header {
         align-items: flex-start;
-        flex-direction: column;
+        grid-template-columns: 1fr;
       }
       .search {
         width: 100%;
@@ -202,14 +373,31 @@
         border-left: 0;
         border-top: 1px solid var(--line);
       }
+      main {
+        overflow: visible;
+      }
+      .graph-shell {
+        min-height: 460px;
+      }
+      svg {
+        min-height: 460px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app">
     <header>
-      <h1>Research OS Visual Explorer</h1>
+      <div class="brand">
+        <h1>Research OS</h1>
+        <div class="subtitle">Visual Explorer</div>
+      </div>
+      <div class="mode-toggle" aria-label="Map view">
+        <button type="button" data-view="project" class="active">Project Map</button>
+        <button type="button" data-view="category">Category Map</button>
+      </div>
       <input class="search" id="search" type="search" placeholder="Search graph">
+      <button class="theme-toggle" id="theme-toggle" type="button">Theme: System</button>
       <div class="filters" id="filters" aria-label="Node type filters">
       </div>
     </header>
@@ -233,25 +421,70 @@
       Paper: "#2563eb",
       Concept: "#7c3aed",
       Collection: "#b45309",
-      Folder: "#475467"
+      Folder: "#475467",
+      Dataset: "#0e7490",
+      Figure: "#be123c",
+      Manuscript: "#9333ea",
+      Codebase: "#0369a1",
+      Note: "#64748b"
     };
     const state = {
       search: "",
       activeTypes: new Set(nodeTypes),
-      selectedId: null
+      selectedId: null,
+      view: "project",
+      theme: loadTheme()
     };
     const svg = document.getElementById("graph");
     const summary = document.getElementById("summary");
     const inspector = document.getElementById("inspector");
     const searchInput = document.getElementById("search");
     const filters = document.getElementById("filters");
+    const themeToggle = document.getElementById("theme-toggle");
+
+    applyTheme();
+    applyView();
 
     searchInput.addEventListener("input", function (event) {
       state.search = event.target.value.trim().toLowerCase();
       draw();
     });
 
+    document.querySelectorAll(".mode-toggle [data-view]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        state.view = button.getAttribute("data-view") || "project";
+        applyView();
+        draw();
+      });
+    });
+
+    themeToggle.addEventListener("click", function () {
+      state.theme = state.theme === "system" ? "light" : state.theme === "light" ? "dark" : "system";
+      localStorage.setItem("research-os-theme", state.theme);
+      applyTheme();
+    });
+
     renderFilters();
+
+    function loadTheme() {
+      return localStorage.getItem("research-os-theme") || "system";
+    }
+
+    function applyTheme() {
+      if (state.theme === "system") {
+        document.documentElement.removeAttribute("data-theme");
+      } else {
+        document.documentElement.setAttribute("data-theme", state.theme);
+      }
+      themeToggle.textContent = "Theme: " + capitalize(state.theme);
+    }
+
+    function applyView() {
+      document.documentElement.setAttribute("data-view", state.view);
+      document.querySelectorAll(".mode-toggle [data-view]").forEach(function (item) {
+        item.classList.toggle("active", item.getAttribute("data-view") === state.view);
+      });
+    }
 
     function renderFilters() {
       filters.innerHTML = nodeTypes.map(function (nodeType) {
@@ -334,24 +567,29 @@
         return;
       }
 
-      const positions = layout(nodes, width, height);
+      const positions = state.view === "category"
+        ? categoryLayout(nodes, width, height)
+        : projectLayout(nodes, width, height);
+      if (state.view === "category") {
+        drawCategoryLabels(nodes, positions);
+      }
+      const focusedIds = focusedNodeIds();
       edges.forEach(function (edge) {
         const source = positions.get(edge.source);
         const target = positions.get(edge.target);
         if (!source || !target) return;
-        svg.appendChild(makeSvg("line", {
-          class: "edge",
-          x1: source.x,
-          y1: source.y,
-          x2: target.x,
-          y2: target.y
+        const focused = !state.selectedId || (focusedIds.has(edge.source) && focusedIds.has(edge.target));
+        svg.appendChild(makeSvg("path", {
+          class: "edge" + (focused ? " focused" : ""),
+          d: curvePath(source, target)
         }));
       });
 
       nodes.forEach(function (node) {
         const point = positions.get(node.id);
+        const dimmed = state.selectedId && !focusedIds.has(node.id);
         const group = makeSvg("g", {
-          class: "node" + (node.id === state.selectedId ? " selected" : ""),
+          class: "node" + (node.id === state.selectedId ? " selected" : "") + (dimmed ? " dimmed" : ""),
           transform: "translate(" + point.x + " " + point.y + ")",
           tabindex: "0"
         });
@@ -367,30 +605,138 @@
           }
         });
         group.appendChild(makeSvg("circle", {
-          r: 15,
-          fill: colors[node.type] || "#475467"
+          r: node.type === "Project" ? 18 : 14,
+          fill: colors[node.type] || "#64748b"
         }));
-        const title = shortLabel(node.title || node.id);
-        const text = makeSvg("text", { x: 0, y: 31, "text-anchor": "middle" });
+        const label = nodeLabel(node, point, width);
+        if (label.background) {
+          group.appendChild(makeSvg("rect", label.background));
+        }
+        const text = makeSvg("text", label.textAttributes);
+        const title = shortLabel(node.title || node.id, label.maxLength);
         text.textContent = title;
         group.appendChild(text);
         svg.appendChild(group);
       });
     }
 
-    function layout(nodes, width, height) {
+    function projectLayout(nodes, width, height) {
       const centerX = width / 2;
       const centerY = height / 2;
-      const radius = Math.max(80, Math.min(width, height) * 0.36);
+      const radius = Math.max(92, Math.min(width, height) * 0.36);
       const positions = new Map();
-      nodes.forEach(function (node, index) {
-        const angle = nodes.length === 1 ? -Math.PI / 2 : (Math.PI * 2 * index) / nodes.length - Math.PI / 2;
+      const projects = nodes.filter(function (node) { return node.type === "Project"; });
+      const others = nodes.filter(function (node) { return node.type !== "Project"; });
+      projects.forEach(function (node, index) {
+        const offset = (index - (projects.length - 1) / 2) * 62;
+        positions.set(node.id, { x: centerX + offset, y: centerY - 20 });
+      });
+      others.forEach(function (node, index) {
+        const angle = others.length === 1 ? -Math.PI / 2 : (Math.PI * 2 * index) / others.length - Math.PI / 2;
         positions.set(node.id, {
           x: centerX + Math.cos(angle) * radius,
           y: centerY + Math.sin(angle) * radius
         });
       });
+      if (!projects.length) {
+        nodes.forEach(function (node, index) {
+          const angle = nodes.length === 1 ? -Math.PI / 2 : (Math.PI * 2 * index) / nodes.length - Math.PI / 2;
+          positions.set(node.id, {
+            x: centerX + Math.cos(angle) * radius,
+            y: centerY + Math.sin(angle) * radius
+          });
+        });
+      }
       return positions;
+    }
+
+    function categoryLayout(nodes, width, height) {
+      const positions = new Map();
+      const grouped = nodeTypes
+        .map(function (type) { return [type, nodes.filter(function (node) { return (node.type || "Paper") === type; })]; })
+        .filter(function (entry) { return entry[1].length > 0; });
+      const columns = Math.max(1, grouped.length);
+      const columnWidth = width / columns;
+      const top = 86;
+      const bottom = 66;
+      grouped.forEach(function (entry, columnIndex) {
+        const items = entry[1];
+        const x = columnWidth * columnIndex + columnWidth / 2;
+        items.forEach(function (node, itemIndex) {
+          const usableHeight = Math.max(160, height - top - bottom);
+          const singleOffset = 0.18 + (columnIndex % 3) * 0.28;
+          const step = items.length === 1 ? 0 : usableHeight / (items.length - 1);
+          const y = items.length === 1 ? top + usableHeight * singleOffset : top + step * itemIndex;
+          const stagger = items.length > 1 && itemIndex % 2 ? Math.min(18, columnWidth * 0.10) : 0;
+          positions.set(node.id, { x: x - stagger, y: y });
+        });
+      });
+      return positions;
+    }
+
+    function drawCategoryLabels(nodes, positions) {
+      const seen = new Set();
+      nodes.forEach(function (node, index) {
+        const type = node.type || "Paper";
+        if (seen.has(type)) return;
+        seen.add(type);
+        const point = positions.get(node.id);
+        if (!point) return;
+        const label = makeSvg("text", { class: "category-label", x: point.x, y: 36, "text-anchor": "middle" });
+        label.textContent = type;
+        svg.appendChild(label);
+      });
+    }
+
+    function nodeLabel(node, point, width) {
+      if (state.view === "category") {
+        const anchorLeft = point.x > width * 0.72;
+        const textX = anchorLeft ? -20 : 20;
+        const maxLength = Math.max(14, Math.min(24, Math.floor(width / Math.max(1, nodeTypes.length) / 8)));
+        const rectWidth = maxLength * 6.4 + 18;
+        return {
+          maxLength: maxLength,
+          textAttributes: {
+            x: textX,
+            y: 4,
+            "text-anchor": anchorLeft ? "end" : "start"
+          },
+          background: {
+            class: "label-bg",
+            x: anchorLeft ? -rectWidth - 14 : 14,
+            y: -12,
+            width: rectWidth,
+            height: 23,
+            rx: 6
+          }
+        };
+      }
+      return {
+        maxLength: 28,
+        textAttributes: { x: 0, y: 31, "text-anchor": "middle" },
+        background: null
+      };
+    }
+
+    function curvePath(source, target) {
+      const midX = (source.x + target.x) / 2;
+      const midY = (source.y + target.y) / 2;
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const curve = Math.min(80, Math.max(24, Math.sqrt(dx * dx + dy * dy) * 0.12));
+      const controlX = midX - dy / Math.max(1, Math.sqrt(dx * dx + dy * dy)) * curve;
+      const controlY = midY + dx / Math.max(1, Math.sqrt(dx * dx + dy * dy)) * curve;
+      return "M " + source.x + " " + source.y + " Q " + controlX + " " + controlY + " " + target.x + " " + target.y;
+    }
+
+    function focusedNodeIds() {
+      if (!state.selectedId) return new Set(graphData.nodes.map(function (node) { return node.id; }));
+      const ids = new Set([state.selectedId]);
+      graphData.edges.forEach(function (edge) {
+        if (edge.source === state.selectedId) ids.add(edge.target);
+        if (edge.target === state.selectedId) ids.add(edge.source);
+      });
+      return ids;
     }
 
     function renderInspector() {
@@ -438,7 +784,7 @@
 
     function renderNeighbors(neighbors) {
       if (!neighbors.length) return '<p class="inspector-subtitle">No direct neighbors.</p>';
-      return '<ul>' + neighbors.map(function (neighbor) {
+      return '<ul class="neighbor-list">' + neighbors.map(function (neighbor) {
         return '<li><strong>' + escapeHtml(neighbor.title || neighbor.id) + '</strong><br><code>' +
           escapeHtml(neighbor.id) + '</code><br>' + escapeHtml(neighbor.relation) + '</li>';
       }).join("") + '</ul>';
@@ -450,8 +796,13 @@
       return String(value);
     }
 
-    function shortLabel(value) {
-      return value.length > 28 ? value.slice(0, 25) + "..." : value;
+    function shortLabel(value, maxLength) {
+      const limit = maxLength || 28;
+      return value.length > limit ? value.slice(0, Math.max(1, limit - 3)) + "..." : value;
+    }
+
+    function capitalize(value) {
+      return value.charAt(0).toUpperCase() + value.slice(1);
     }
 
     function escapeHtml(value) {
