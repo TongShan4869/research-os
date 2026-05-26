@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pytest
-
 from research_os.cli import main
 from research_os.config import Hub
 from research_os.visual import render_visual_html, write_visual
@@ -48,7 +46,6 @@ def test_write_visual_creates_visual_index(tmp_path: Path):
     assert "Research OS Visual Explorer" in visual_path.read_text(encoding="utf-8")
 
 
-@pytest.mark.xfail(reason="build-visual is wired in Task 3", strict=True)
 def test_build_visual_cli_rebuilds_graph_and_writes_dashboard(tmp_path: Path):
     hub = tmp_path / "ResearchOS"
     assert main(["init", str(hub)]) == 0
