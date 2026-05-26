@@ -20,6 +20,7 @@ Research OS is not trying to replace Zotero, Obsidian, or normal project folders
 - Tracks papers and other sources in `registries/sources.yaml`.
 - Generates an Obsidian `Home.md` project cockpit.
 - Generates `graph/graph.json` for linked project/source context.
+- Generates a static `visual/index.html` explorer for browsing the research graph.
 - Connects papers to Zotero when Zotero is available.
 - Gives Codex startup instructions through `AGENTS.md`, similar in spirit to Claude Code's `CLAUDE.md`.
 
@@ -75,8 +76,11 @@ That lets an agent understand that a paper tagged or linked to `ABR` is relevant
     paths.py                        shared hub path helpers
     projects.py                     project registry and folder attachment
     validation.py                   hub validation
+    visual.py                       static visual explorer generation
+    visual_template.html            bundled React Flow visual shell
     zotero.py                       Zotero local API client
     template/                       files copied by `research-os init`
+  visual-app/                       React Flow source for the visual explorer
   examples/demo-research-workspace/  working demo hub
   tests/                            pytest coverage
 ```
@@ -137,7 +141,10 @@ Build generated context:
 ```bash
 research-os build-index --hub ~/ResearchOS
 research-os build-graph --hub ~/ResearchOS
+research-os build-visual --hub ~/ResearchOS
 ```
+
+Open `~/ResearchOS/visual/index.html` in a browser to inspect the generated visual map.
 
 ## Obsidian
 
@@ -163,6 +170,34 @@ obsidian/starter-vault/Home.md
 - items that need attention, such as sources with no linked project or concepts
 
 Open the vault folder in Obsidian to inspect notes and Graph View.
+
+## Visual Explorer
+
+`research-os build-visual` creates:
+
+```text
+visual/index.html
+```
+
+The visual explorer is a static React Flow page generated from `graph/graph.json`. It is designed as a research board:
+
+- `Zotero Library` is the canonical home for paper collections and paper pills.
+- `Global Wiki` is the canonical home for concepts.
+- Project cards connect to the papers and concepts they use through edges, without duplicating those nodes.
+- Clicking a project opens its surrounding context by expanding the linked library and wiki regions.
+- The right inspector shows selected-node metadata, direct neighbors, and compact graph counts.
+
+The generated page is self-contained. Ordinary Research OS users do not need Node.js or a dev server to run it.
+
+For frontend development, the source lives in `visual-app/`:
+
+```bash
+cd visual-app
+npm install
+npm run build
+```
+
+That build updates `src/research_os/visual_template.html`, which is packaged with the Python project. The Python CLI injects the current hub graph data into that template when `build-visual` runs.
 
 ## Zotero
 
@@ -220,6 +255,7 @@ research-os attach-folder <project-id> <folder> --kind <kind> --hub <path>
 research-os resolve-project <folder> --hub <path>
 research-os build-index --hub <path>
 research-os build-graph --hub <path>
+research-os build-visual --hub <path>
 research-os zotero-status
 research-os ingest-zotero-collection <collection-name-or-key> --project <project-id> --hub <path>
 ```
@@ -250,9 +286,10 @@ Try:
 PYTHONPATH=src python -m research_os.cli validate --hub examples/demo-research-workspace
 PYTHONPATH=src python -m research_os.cli build-index --hub examples/demo-research-workspace
 PYTHONPATH=src python -m research_os.cli build-graph --hub examples/demo-research-workspace
+PYTHONPATH=src python -m research_os.cli build-visual --hub examples/demo-research-workspace
 ```
 
-Then open `examples/demo-research-workspace/obsidian/starter-vault` in Obsidian and start from `Home.md`.
+Then open `examples/demo-research-workspace/obsidian/starter-vault` in Obsidian and start from `Home.md`, or open `examples/demo-research-workspace/visual/index.html` in a browser.
 
 ## Development
 
@@ -275,6 +312,13 @@ python -m pip wheel . --no-deps --no-build-isolation -w /private/tmp/research-os
 ```
 
 Current package metadata lives in `pyproject.toml`.
+
+When changing the visual explorer source, rebuild the bundled template:
+
+```bash
+cd visual-app
+npm run build
+```
 
 ## Safety Principles
 
