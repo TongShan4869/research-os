@@ -47,6 +47,8 @@ def test_render_visual_html_embeds_graph_data():
     assert "renderGroupGraph" in html
     assert "Reference Papers" in html
     assert "Theme: System" in html
+    assert "--dot-soft" in html
+    assert "28px 28px" in html
     assert 'html[data-theme="dark"]' in html
     assert 'html[data-theme="light"]' in html
 

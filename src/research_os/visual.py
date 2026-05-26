@@ -40,7 +40,8 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
     :root {{
       color-scheme: light dark;
       --bg: #eef1f4;
-      --bg-pattern: rgba(25, 35, 48, 0.045);
+      --dot: rgba(17, 24, 39, 0.24);
+      --dot-soft: rgba(17, 24, 39, 0.13);
       --panel: #fbfcfd;
       --panel-strong: #ffffff;
       --panel-soft: #f2f5f7;
@@ -62,7 +63,8 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
     @media (prefers-color-scheme: dark) {{
       :root {{
         --bg: #0f1216;
-        --bg-pattern: rgba(237, 242, 247, 0.035);
+        --dot: rgba(237, 242, 247, 0.20);
+        --dot-soft: rgba(237, 242, 247, 0.11);
         --panel: #171b21;
         --panel-strong: #1f242c;
         --panel-soft: #12161c;
@@ -82,7 +84,8 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
     html[data-theme="light"] {{
       color-scheme: light;
       --bg: #eef1f4;
-      --bg-pattern: rgba(25, 35, 48, 0.045);
+      --dot: rgba(17, 24, 39, 0.24);
+      --dot-soft: rgba(17, 24, 39, 0.13);
       --panel: #fbfcfd;
       --panel-strong: #ffffff;
       --panel-soft: #f2f5f7;
@@ -101,7 +104,8 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
     html[data-theme="dark"] {{
       color-scheme: dark;
       --bg: #0f1216;
-      --bg-pattern: rgba(237, 242, 247, 0.035);
+      --dot: rgba(237, 242, 247, 0.20);
+      --dot-soft: rgba(237, 242, 247, 0.11);
       --panel: #171b21;
       --panel-strong: #1f242c;
       --panel-soft: #12161c;
@@ -122,11 +126,10 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
       margin: 0;
       min-height: 100vh;
       background:
-        linear-gradient(var(--bg-pattern) 1px, transparent 1px),
-        linear-gradient(90deg, var(--bg-pattern) 1px, transparent 1px),
+        radial-gradient(circle, var(--dot) 1.45px, transparent 1.9px),
         radial-gradient(circle at 20% 10%, var(--accent-soft), transparent 30%),
         var(--bg);
-      background-size: 36px 36px, 36px 36px, auto, auto;
+      background-size: 28px 28px, auto, auto;
       color: var(--ink);
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 14px;
@@ -266,8 +269,10 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
       border: 1px solid var(--line);
       border-radius: var(--radius-lg);
       background:
+        radial-gradient(circle, var(--dot-soft) 1.35px, transparent 1.85px),
         radial-gradient(circle at 50% 50%, var(--accent-soft), transparent 42%),
         var(--panel);
+      background-size: 28px 28px, auto, auto;
       overflow: hidden;
       box-shadow: var(--shadow);
       position: relative;
