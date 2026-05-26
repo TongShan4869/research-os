@@ -3,7 +3,8 @@ from pathlib import Path
 import yaml
 
 from research_os.cli import main
-from research_os.graph import graph_from_registries
+from research_os.config import load_hub
+from research_os.graph import build_graph, graph_from_registries
 
 
 def test_build_index_creates_home_note_from_registries(tmp_path: Path):
@@ -89,6 +90,7 @@ def test_build_index_uses_canonical_graph_counts_with_drift_prone_registries(tmp
     assert main(["build-index", "--hub", str(hub)]) == 0
 
     graph = graph_from_registries(projects, sources)
+    assert build_graph(load_hub(hub)) == graph
     graph_line = f"- Graph: {len(graph['nodes'])} nodes, {len(graph['edges'])} edges"
     text = (hub / "obsidian" / "starter-vault" / "Home.md").read_text(encoding="utf-8")
     assert graph_line == "- Graph: 5 nodes, 6 edges"

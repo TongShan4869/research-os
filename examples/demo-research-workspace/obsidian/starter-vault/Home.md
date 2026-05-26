@@ -6,6 +6,11 @@ tags:
 
 # Research OS
 
+## Visual Explorer
+
+- [Open visual explorer](../../visual/index.html)
+- Graph: 11 nodes, 16 edges
+
 ## Projects
 
 | Project | Status | Zotero Collections | Sources | Tags |
