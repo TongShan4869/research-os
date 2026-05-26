@@ -198,7 +198,7 @@ def test_build_graph_preserves_collection_key_alignment_with_blank_keys(tmp_path
     graph = json.loads((hub / "graph" / "graph.json").read_text(encoding="utf-8"))
     nodes_by_id = {node["id"]: node for node in graph["nodes"]}
 
-    assert nodes_by_id["project:auditory-demo"]["metadata"]["zotero_collection_keys"] == ["KEY2"]
+    assert nodes_by_id["project:auditory-demo"]["metadata"]["zotero_collection_keys"] == ["", "KEY2"]
     assert "zotero_collection_key" not in nodes_by_id["collection:ABR"].get("metadata", {})
     assert nodes_by_id["collection:Other"]["metadata"]["zotero_collection_key"] == "KEY2"
 

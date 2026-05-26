@@ -23,7 +23,7 @@ def build_graph(hub: Hub) -> dict[str, list[dict[str, Any]]]:
 
         project_node_id = f"project:{project_id}"
         collections = string_list(project.get("zotero_collections"))
-        collection_keys = string_list(project.get("zotero_collection_keys"))
+        collection_keys = aligned_string_list(project.get("zotero_collection_keys"))
         project_collections = collection_items(project.get("zotero_collections"), project.get("zotero_collection_keys"))
         concepts = string_list(project.get("concepts"))
         add_node(
@@ -197,6 +197,15 @@ def collection_items(collections_value: Any, keys_value: Any) -> list[tuple[str,
         if collection is not None:
             items.append((collection, string_value(list_value_at(keys, index))))
     return items
+
+
+def aligned_string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    strings: list[str] = []
+    for item in value:
+        strings.append(item.strip() if isinstance(item, str) else "")
+    return strings
 
 
 def string_list(value: Any) -> list[str]:
