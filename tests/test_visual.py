@@ -27,7 +27,7 @@ def test_render_visual_html_embeds_graph_data():
     html = render_visual_html(graph)
 
     assert "<title>Research OS Visual Explorer</title>" in html
-    assert "const graphData =" in html
+    assert '<script id="research-os-graph-data" type="application/json">' in html
     assert dangerous_value not in html
     assert (
         "\\u003c/script\\u003e\\u003cscript\\u003ealert(1)"
@@ -39,26 +39,22 @@ def test_render_visual_html_embeds_graph_data():
     assert "Collection" in html
     assert "Folder" in html
     assert "Dataset" in html
-    assert "deriveNodeTypes(graphData.nodes)" in html
-    assert 'data-view="project"' in html
-    assert 'data-view="category"' in html
-    assert 'data-view="group"' in html
-    assert "Group View" in html
-    assert "renderGroupGraph" in html
-    assert "Reference Papers" in html
-    assert "Theme: System" in html
-    assert "--dot-soft" in html
-    assert "18px 18px" in html
+    assert "Universe" in html
+    assert "Zotero Library" in html
+    assert "Global Wiki" in html
+    assert "Research Projects" not in html
+    assert "Project Map" not in html
+    assert "Category Map" not in html
+    assert "Group View" not in html
+    assert "Theme:" in html
+    assert "--font-serif" in html
+    assert "16px 16px" in html
     assert "circle at 50% 50%" not in html
-    assert "background: var(--bg);" in html
-    assert "manualPositions" in html
-    assert "startPan" in html
-    assert "startItemDrag" in html
-    assert "clipPath" in html
-    assert "safeDomId" in html
-    assert "visibleCategoryTypes" in html
-    assert 'html[data-theme="dark"]' in html
-    assert 'html[data-theme="light"]' in html
+    assert "react-flow" in html
+    assert "research-os-graph-data" in html
+    assert "__RESEARCH_OS_GRAPH_DATA__" not in html
+    assert "html[data-theme=dark]" in html
+    assert "html[data-theme=light]" in html
 
 
 def test_write_visual_creates_visual_index(tmp_path: Path):
