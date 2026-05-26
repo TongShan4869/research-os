@@ -249,11 +249,28 @@
     .edge {
       fill: none;
       stroke: var(--edge);
-      stroke-width: 1.25;
+      stroke-width: 0.85;
+      stroke-linecap: round;
+      opacity: 0.78;
     }
     .edge.focused {
       stroke: var(--edge-focus);
-      stroke-width: 2;
+      stroke-width: 1.25;
+      opacity: 0.95;
+    }
+    .edge-label {
+      fill: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .edge-label-bg {
+      fill: var(--panel-strong);
+      stroke: var(--line);
+      stroke-width: 1;
+    }
+    .anchor-dot {
+      fill: var(--line-strong);
+      opacity: 0.85;
     }
     .category-label {
       fill: var(--muted);
@@ -287,6 +304,48 @@
     .node.selected circle {
       stroke: var(--accent);
       stroke-width: 4;
+    }
+    .group-card {
+      cursor: pointer;
+      transition: opacity 160ms ease;
+    }
+    .group-card.dimmed {
+      opacity: 0.42;
+    }
+    .group-card rect.card {
+      fill: color-mix(in srgb, var(--panel-strong) 90%, transparent);
+      stroke: var(--line);
+      stroke-width: 1;
+      filter: drop-shadow(0 18px 26px rgba(16, 24, 40, 0.14));
+    }
+    .group-card rect.stripe {
+      opacity: 0.82;
+    }
+    .group-card.selected rect.card {
+      stroke: var(--accent);
+      stroke-width: 2;
+    }
+    .group-kind {
+      fill: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .group-badge {
+      fill: var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+    }
+    .group-title {
+      fill: var(--ink);
+      font-size: 20px;
+      font-weight: 720;
+    }
+    .group-description,
+    .group-count {
+      fill: var(--muted);
+      font-size: 13px;
     }
     aside {
       border-left: 1px solid var(--line);
@@ -395,6 +454,7 @@
       <div class="mode-toggle" aria-label="Map view">
         <button type="button" data-view="project" class="active">Project Map</button>
         <button type="button" data-view="category">Category Map</button>
+        <button type="button" data-view="group">Group View</button>
       </div>
       <input class="search" id="search" type="search" placeholder="Search graph">
       <button class="theme-toggle" id="theme-toggle" type="button">Theme: System</button>
@@ -428,10 +488,83 @@
       Codebase: "#0369a1",
       Note: "#64748b"
     };
+    const groupDetails = {
+      Project: {
+        title: "Research Projects",
+        kind: "Project",
+        badge: "active",
+        description: "Registered Research OS projects linking literature, concepts, folders, and outputs.",
+        itemLabel: "projects"
+      },
+      Paper: {
+        title: "Reference Papers",
+        kind: "Reference",
+        badge: "literature",
+        description: "Zotero-backed papers and readings connected to active research work.",
+        itemLabel: "papers"
+      },
+      Concept: {
+        title: "Wiki Concepts",
+        kind: "Wiki",
+        badge: "concept",
+        description: "Concept nodes, tags, and glossary terms shared across projects.",
+        itemLabel: "concepts"
+      },
+      Collection: {
+        title: "Source Collections",
+        kind: "Source",
+        badge: "Zotero",
+        description: "Imported source collections that organize reference material.",
+        itemLabel: "collections"
+      },
+      Folder: {
+        title: "Workspace Folders",
+        kind: "Local",
+        badge: "files",
+        description: "Attached local folders for analysis, code, data, and manuscripts.",
+        itemLabel: "folders"
+      },
+      Codebase: {
+        title: "Codebases",
+        kind: "Code",
+        badge: "repo",
+        description: "Source repositories and computational work connected to projects.",
+        itemLabel: "codebases"
+      },
+      Manuscript: {
+        title: "Manuscripts",
+        kind: "Writing",
+        badge: "draft",
+        description: "Drafts, papers, and authored outputs under development.",
+        itemLabel: "manuscripts"
+      },
+      Dataset: {
+        title: "Datasets",
+        kind: "Data",
+        badge: "evidence",
+        description: "Structured data sources used for analysis and figures.",
+        itemLabel: "datasets"
+      },
+      Figure: {
+        title: "Figures",
+        kind: "Output",
+        badge: "visual",
+        description: "Visual outputs and figure artifacts produced by the workspace.",
+        itemLabel: "figures"
+      },
+      Note: {
+        title: "Research Notes",
+        kind: "Note",
+        badge: "vault",
+        description: "Obsidian notes, memos, and local research context.",
+        itemLabel: "notes"
+      }
+    };
     const state = {
       search: "",
       activeTypes: new Set(nodeTypes),
       selectedId: null,
+      selectedGroup: null,
       view: "project",
       theme: loadTheme()
     };
@@ -452,7 +585,12 @@
 
     document.querySelectorAll(".mode-toggle [data-view]").forEach(function (button) {
       button.addEventListener("click", function () {
-        state.view = button.getAttribute("data-view") || "project";
+        const nextView = button.getAttribute("data-view") || "project";
+        if (nextView !== state.view) {
+          state.selectedId = null;
+          state.selectedGroup = null;
+        }
+        state.view = nextView;
         applyView();
         draw();
       });
@@ -534,6 +672,9 @@
       if (state.selectedId && !nodeIds.has(state.selectedId)) {
         state.selectedId = null;
       }
+      if (state.selectedGroup && !nodes.some(function (node) { return (node.type || "Paper") === state.selectedGroup; })) {
+        state.selectedGroup = null;
+      }
       renderSummary(nodes, edges);
       renderGraph(nodes, edges);
       renderInspector();
@@ -567,6 +708,11 @@
         return;
       }
 
+      if (state.view === "group") {
+        renderGroupGraph(nodes, edges, width, height);
+        return;
+      }
+
       const positions = state.view === "category"
         ? categoryLayout(nodes, width, height)
         : projectLayout(nodes, width, height);
@@ -578,7 +724,7 @@
         const source = positions.get(edge.source);
         const target = positions.get(edge.target);
         if (!source || !target) return;
-        const focused = !state.selectedId || (focusedIds.has(edge.source) && focusedIds.has(edge.target));
+        const focused = state.selectedId && focusedIds.has(edge.source) && focusedIds.has(edge.target);
         svg.appendChild(makeSvg("path", {
           class: "edge" + (focused ? " focused" : ""),
           d: curvePath(source, target)
@@ -688,6 +834,224 @@
       });
     }
 
+    function renderGroupGraph(nodes, edges, width, height) {
+      const groups = buildGroups(nodes);
+      const groupMap = new Map(groups.map(function (group) { return [group.type, group]; }));
+      const cardSize = groupCardSize(width);
+      const positions = groupLayout(groups, width, height, cardSize);
+      const groupedEdges = groupEdges(edges, nodes);
+      const focusedGroups = focusedGroupTypes(groupedEdges);
+
+      groupedEdges.forEach(function (edge) {
+        const source = positions.get(edge.source);
+        const target = positions.get(edge.target);
+        if (!source || !target) return;
+        const focused = state.selectedGroup && (focusedGroups.has(edge.source) || focusedGroups.has(edge.target));
+        drawGroupEdge(source, target, edge.count, focused, cardSize);
+      });
+
+      groups.forEach(function (group) {
+        const point = positions.get(group.type);
+        if (!point) return;
+        const dimmed = state.selectedGroup && !focusedGroups.has(group.type);
+        drawGroupCard(groupMap.get(group.type), point, dimmed, cardSize);
+      });
+    }
+
+    function buildGroups(nodes) {
+      return nodeTypes
+        .map(function (type) {
+          const items = nodes.filter(function (node) { return (node.type || "Paper") === type; });
+          if (!items.length) return null;
+          const details = groupInfo(type);
+          return {
+            type: type,
+            title: details.title,
+            kind: details.kind,
+            badge: details.badge,
+            description: details.description,
+            itemLabel: details.itemLabel,
+            count: items.length,
+            items: items
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function groupCardSize(width) {
+      return {
+        width: Math.max(230, Math.min(300, width * 0.31)),
+        height: 132
+      };
+    }
+
+    function groupLayout(groups, width, height, cardSize) {
+      const positions = new Map();
+      const byType = new Map(groups.map(function (group) { return [group.type, group]; }));
+      const preferred = [
+        ["Project", width * 0.50, height * 0.20],
+        ["Paper", width * 0.28, height * 0.50],
+        ["Concept", width * 0.72, height * 0.50],
+        ["Collection", width * 0.30, height * 0.78],
+        ["Folder", width * 0.68, height * 0.78]
+      ];
+      preferred.forEach(function (entry) {
+        if (byType.has(entry[0])) {
+          positions.set(entry[0], clampCard({ x: entry[1], y: entry[2] }, cardSize.width, cardSize.height, width, height));
+        }
+      });
+      const remaining = groups.filter(function (group) { return !positions.has(group.type); });
+      const columns = Math.min(3, Math.max(1, remaining.length));
+      remaining.forEach(function (group, index) {
+        const row = Math.floor(index / columns);
+        const column = index % columns;
+        const x = width * (column + 1) / (columns + 1);
+        const y = height * 0.28 + row * (cardSize.height + 44);
+        positions.set(group.type, clampCard({ x: x, y: y }, cardSize.width, cardSize.height, width, height));
+      });
+      return positions;
+    }
+
+    function clampCard(point, cardWidth, cardHeight, width, height) {
+      const margin = 28;
+      return {
+        x: Math.max(margin + cardWidth / 2, Math.min(width - margin - cardWidth / 2, point.x)),
+        y: Math.max(54 + cardHeight / 2, Math.min(height - margin - cardHeight / 2, point.y))
+      };
+    }
+
+    function groupEdges(edges, nodes) {
+      const nodeType = new Map(nodes.map(function (node) { return [node.id, node.type || "Paper"]; }));
+      const counts = new Map();
+      edges.forEach(function (edge) {
+        const sourceType = nodeType.get(edge.source);
+        const targetType = nodeType.get(edge.target);
+        if (!sourceType || !targetType || sourceType === targetType) return;
+        const key = sourceType + "->" + targetType;
+        counts.set(key, {
+          source: sourceType,
+          target: targetType,
+          count: (counts.get(key) ? counts.get(key).count : 0) + 1
+        });
+      });
+      return Array.from(counts.values());
+    }
+
+    function drawGroupEdge(source, target, count, focused, cardSize) {
+      const start = groupAnchor(source, target, cardSize.width, cardSize.height);
+      const end = groupAnchor(target, source, cardSize.width, cardSize.height);
+      svg.appendChild(makeSvg("path", {
+        class: "edge" + (focused ? " focused" : ""),
+        d: curvePath(start, end)
+      }));
+      svg.appendChild(makeSvg("circle", { class: "anchor-dot", cx: start.x, cy: start.y, r: 4 }));
+      svg.appendChild(makeSvg("circle", { class: "anchor-dot", cx: end.x, cy: end.y, r: 4 }));
+      const labelText = String(count);
+      const labelWidth = labelText.length * 7 + 14;
+      const label = edgeLabelPoint(start, end);
+      svg.appendChild(makeSvg("rect", {
+        class: "edge-label-bg",
+        x: label.x - labelWidth / 2,
+        y: label.y - 13,
+        width: labelWidth,
+        height: 22,
+        rx: 5
+      }));
+      const text = makeSvg("text", { class: "edge-label", x: label.x, y: label.y + 2, "text-anchor": "middle" });
+      text.textContent = labelText;
+      svg.appendChild(text);
+    }
+
+    function drawGroupCard(group, point, dimmed, cardSize) {
+      const width = cardSize.width;
+      const height = cardSize.height;
+      const x = point.x - width / 2;
+      const y = point.y - height / 2;
+      const selected = state.selectedGroup === group.type;
+      const card = makeSvg("g", {
+        class: "group-card" + (selected ? " selected" : "") + (dimmed ? " dimmed" : ""),
+        transform: "translate(" + x + " " + y + ")",
+        tabindex: "0"
+      });
+      card.addEventListener("click", function () {
+        state.selectedGroup = group.type;
+        state.selectedId = null;
+        draw();
+      });
+      card.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          state.selectedGroup = group.type;
+          state.selectedId = null;
+          draw();
+        }
+      });
+      card.appendChild(makeSvg("rect", { class: "card", x: 0, y: 0, width: width, height: height, rx: 13 }));
+      card.appendChild(makeSvg("rect", {
+        class: "stripe",
+        x: 0,
+        y: 0,
+        width: 8,
+        height: height,
+        rx: 7,
+        fill: colors[group.type] || "#64748b"
+      }));
+      const kind = makeSvg("text", { class: "group-kind", x: 22, y: 32 });
+      kind.textContent = group.kind;
+      card.appendChild(kind);
+      const badge = makeSvg("text", { class: "group-badge", x: width - 18, y: 32, "text-anchor": "end" });
+      badge.textContent = group.badge;
+      card.appendChild(badge);
+      const title = makeSvg("text", { class: "group-title", x: 22, y: 62 });
+      title.textContent = shortLabel(group.title, 30);
+      card.appendChild(title);
+      wrapText(group.description, 44, 2).forEach(function (line, index) {
+        const description = makeSvg("text", { class: "group-description", x: 22, y: 86 + index * 17 });
+        description.textContent = line;
+        card.appendChild(description);
+      });
+      const count = makeSvg("text", { class: "group-count", x: 22, y: 119 });
+      count.textContent = group.count + " " + group.itemLabel;
+      card.appendChild(count);
+      svg.appendChild(card);
+    }
+
+    function groupAnchor(source, target, width, height) {
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      if (Math.abs(dy) >= Math.abs(dx)) {
+        return { x: source.x, y: source.y + (dy >= 0 ? height / 2 : -height / 2) };
+      }
+      return { x: source.x + (dx >= 0 ? width / 2 : -width / 2), y: source.y };
+    }
+
+    function edgeLabelPoint(source, target) {
+      return {
+        x: source.x + (target.x - source.x) * 0.50,
+        y: source.y + (target.y - source.y) * 0.50 - 6
+      };
+    }
+
+    function focusedGroupTypes(groupedEdges) {
+      if (!state.selectedGroup) return new Set(nodeTypes);
+      const types = new Set([state.selectedGroup]);
+      groupedEdges.forEach(function (edge) {
+        if (edge.source === state.selectedGroup) types.add(edge.target);
+        if (edge.target === state.selectedGroup) types.add(edge.source);
+      });
+      return types;
+    }
+
+    function groupInfo(type) {
+      return groupDetails[type] || {
+        title: type,
+        kind: "Category",
+        badge: "custom",
+        description: "Custom Research OS category discovered from the indexed graph.",
+        itemLabel: type.toLowerCase() + " nodes"
+      };
+    }
+
     function nodeLabel(node, point, width) {
       if (state.view === "category") {
         const anchorLeft = point.x > width * 0.72;
@@ -719,14 +1083,20 @@
     }
 
     function curvePath(source, target) {
-      const midX = (source.x + target.x) / 2;
-      const midY = (source.y + target.y) / 2;
       const dx = target.x - source.x;
       const dy = target.y - source.y;
-      const curve = Math.min(80, Math.max(24, Math.sqrt(dx * dx + dy * dy) * 0.12));
-      const controlX = midX - dy / Math.max(1, Math.sqrt(dx * dx + dy * dy)) * curve;
-      const controlY = midY + dx / Math.max(1, Math.sqrt(dx * dx + dy * dy)) * curve;
-      return "M " + source.x + " " + source.y + " Q " + controlX + " " + controlY + " " + target.x + " " + target.y;
+      if (Math.abs(dy) >= Math.abs(dx) * 0.72) {
+        const controlY = Math.max(34, Math.abs(dy) * 0.52);
+        return "M " + source.x + " " + source.y +
+          " C " + source.x + " " + (source.y + Math.sign(dy || 1) * controlY) +
+          " " + target.x + " " + (target.y - Math.sign(dy || 1) * controlY) +
+          " " + target.x + " " + target.y;
+      }
+      const controlX = Math.max(34, Math.abs(dx) * 0.52);
+      return "M " + source.x + " " + source.y +
+        " C " + (source.x + Math.sign(dx || 1) * controlX) + " " + source.y +
+        " " + (target.x - Math.sign(dx || 1) * controlX) + " " + target.y +
+        " " + target.x + " " + target.y;
     }
 
     function focusedNodeIds() {
@@ -740,6 +1110,10 @@
     }
 
     function renderInspector() {
+      if (state.selectedGroup) {
+        renderGroupInspector(state.selectedGroup);
+        return;
+      }
       const node = graphData.nodes.find(function (item) { return item.id === state.selectedId; });
       if (!node) {
         inspector.innerHTML = '<h2 class="inspector-title">Select a node</h2><p class="inspector-subtitle">Node details and direct neighbors appear here.</p>';
@@ -757,6 +1131,26 @@
         '</dl></div>' +
         '<div class="section"><h2>Metadata</h2>' + renderMetadata(metadata) + '</div>' +
         '<div class="section"><h2>Neighbors</h2>' + renderNeighbors(neighbors) + '</div>';
+    }
+
+    function renderGroupInspector(type) {
+      const nodes = visibleNodes().filter(function (node) { return (node.type || "Paper") === type; });
+      const details = groupInfo(type);
+      const nodeIds = new Set(visibleNodes().map(function (node) { return node.id; }));
+      const relationships = groupEdges(visibleEdges(nodeIds), visibleNodes()).filter(function (edge) {
+        return edge.source === type || edge.target === type;
+      });
+      inspector.innerHTML =
+        '<h2 class="inspector-title">' + escapeHtml(details.title) + '</h2>' +
+        '<p class="inspector-subtitle"><code>group:' + escapeHtml(type) + '</code></p>' +
+        '<div class="section"><h2>Category</h2><dl>' +
+        '<dt>Type</dt><dd>' + escapeHtml(type) + '</dd>' +
+        '<dt>Kind</dt><dd>' + escapeHtml(details.kind) + '</dd>' +
+        '<dt>Count</dt><dd>' + escapeHtml(String(nodes.length)) + '</dd>' +
+        '</dl></div>' +
+        '<div class="section"><h2>Role</h2><p class="inspector-subtitle">' + escapeHtml(details.description) + '</p></div>' +
+        '<div class="section"><h2>Connected Groups</h2>' + renderGroupRelationships(relationships, type) + '</div>' +
+        '<div class="section"><h2>Examples</h2>' + renderGroupExamples(nodes) + '</div>';
     }
 
     function directNeighbors(nodeId) {
@@ -790,6 +1184,24 @@
       }).join("") + '</ul>';
     }
 
+    function renderGroupRelationships(relationships, type) {
+      if (!relationships.length) return '<p class="inspector-subtitle">No visible cross-category links.</p>';
+      return '<ul class="neighbor-list">' + relationships.map(function (relationship) {
+        const otherType = relationship.source === type ? relationship.target : relationship.source;
+        return '<li><strong>' + escapeHtml(groupInfo(otherType).title) + '</strong><br><code>' +
+          escapeHtml(type + " -> " + otherType) + '</code><br>' + escapeHtml(String(relationship.count)) +
+          ' visible links</li>';
+      }).join("") + '</ul>';
+    }
+
+    function renderGroupExamples(nodes) {
+      if (!nodes.length) return '<p class="inspector-subtitle">No visible nodes in this group.</p>';
+      return '<ul class="neighbor-list">' + nodes.slice(0, 8).map(function (node) {
+        return '<li><strong>' + escapeHtml(node.title || node.id) + '</strong><br><code>' +
+          escapeHtml(node.id) + '</code></li>';
+      }).join("") + '</ul>';
+    }
+
     function formatValue(value) {
       if (Array.isArray(value)) return value.join(", ");
       if (value && typeof value === "object") return JSON.stringify(value);
@@ -799,6 +1211,28 @@
     function shortLabel(value, maxLength) {
       const limit = maxLength || 28;
       return value.length > limit ? value.slice(0, Math.max(1, limit - 3)) + "..." : value;
+    }
+
+    function wrapText(value, maxLength, maxLines) {
+      const words = String(value).split(" ");
+      const lines = [];
+      let current = "";
+      words.forEach(function (word) {
+        const next = current ? current + " " + word : word;
+        if (next.length > maxLength && current) {
+          lines.push(current);
+          current = word;
+        } else {
+          current = next;
+        }
+      });
+      if (current) lines.push(current);
+      return lines.slice(0, maxLines).map(function (line, index) {
+        if (index === maxLines - 1 && lines.length > maxLines) {
+          return shortLabel(line, maxLength);
+        }
+        return line;
+      });
     }
 
     function capitalize(value) {
