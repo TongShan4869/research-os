@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from research_os.config import Hub, load_projects, load_sources
+from research_os.graph import graph_from_registries
 from research_os.paths import obsidian_vault_path
 
 
@@ -18,6 +19,7 @@ def build_index(hub: Hub) -> Path:
 
 
 def render_home(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -> str:
+    graph = graph_from_registries(projects, sources)
     lines = [
         "---",
         "type: research_os_home",
@@ -30,7 +32,7 @@ def render_home(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -
         "## Visual Explorer",
         "",
         "- [Open visual explorer](../../visual/index.html)",
-        f"- Graph: {graph_node_count(projects, sources)} nodes, {graph_edge_count(projects, sources)} edges",
+        f"- Graph: {len(graph['nodes'])} nodes, {len(graph['edges'])} edges",
         "",
         "## Projects",
         "",
@@ -146,60 +148,6 @@ def count_sources_without_projects(sources: list[dict[str, Any]]) -> int:
 
 def count_sources_without_concepts(sources: list[dict[str, Any]]) -> int:
     return sum(1 for source in sources if not string_list(source.get("concepts")))
-
-
-def graph_node_count(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -> int:
-    concepts = {
-        concept
-        for project in projects
-        for concept in string_list(project.get("concepts"))
-    }
-    concepts.update(
-        concept
-        for source in sources
-        for concept in string_list(source.get("concepts"))
-    )
-    collections = {
-        collection
-        for project in projects
-        for collection in string_list(project.get("zotero_collections"))
-    }
-    collections.update(
-        collection
-        for source in sources
-        for collection in string_list(source.get("zotero_collections"))
-    )
-    folders = sum(
-        len(project.get("folders", {}))
-        for project in projects
-        if isinstance(project.get("folders"), dict)
-    )
-    return len(projects) + len(sources) + len(concepts) + len(collections) + folders
-
-
-def graph_edge_count(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -> int:
-    project_concept_edges = sum(len(string_list(project.get("concepts"))) for project in projects)
-    project_collection_edges = sum(
-        len(string_list(project.get("zotero_collections"))) for project in projects
-    )
-    project_folder_edges = sum(
-        len(project.get("folders", {}))
-        for project in projects
-        if isinstance(project.get("folders"), dict)
-    )
-    source_project_edges = sum(len(string_list(source.get("projects"))) for source in sources)
-    source_concept_edges = sum(len(string_list(source.get("concepts"))) for source in sources)
-    source_collection_edges = sum(
-        len(string_list(source.get("zotero_collections"))) for source in sources
-    )
-    return (
-        project_concept_edges
-        + project_collection_edges
-        + project_folder_edges
-        + source_project_edges
-        + source_concept_edges
-        + source_collection_edges
-    )
 
 
 def string_list(value: Any) -> list[str]:

@@ -7,10 +7,16 @@ from typing import Any
 
 from research_os.config import Hub, load_projects, load_sources
 
+Graph = dict[str, list[dict[str, Any]]]
 
-def build_graph(hub: Hub) -> dict[str, list[dict[str, Any]]]:
+
+def build_graph(hub: Hub) -> Graph:
     projects = load_projects(hub)
     sources = load_sources(hub)
+    return graph_from_registries(projects, sources)
+
+
+def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -> Graph:
     nodes: list[dict[str, Any]] = []
     nodes_by_id: dict[str, dict[str, Any]] = {}
     edges: list[dict[str, Any]] = []
