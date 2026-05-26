@@ -898,7 +898,7 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
         : projectLayout(nodes, width, height);
       applyManualPositions(positions);
       if (state.view === "category") {{
-        drawCategoryLabels(nodes, positions);
+        drawCategoryLabels(nodes, width);
       }}
       const focusedIds = focusedNodeIds();
       edges.forEach(function (edge) {{
@@ -1006,15 +1006,22 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
       return positions;
     }}
 
-    function drawCategoryLabels(nodes, positions) {{
-      const seen = new Set();
-      nodes.forEach(function (node, index) {{
-        const type = node.type || "Paper";
-        if (seen.has(type)) return;
-        seen.add(type);
-        const point = positions.get(node.id);
-        if (!point) return;
-        const label = makeSvg("text", {{ class: "category-label", x: point.x, y: 36, "text-anchor": "middle" }});
+    function visibleCategoryTypes(nodes) {{
+      return nodeTypes.filter(function (type) {{
+        return nodes.some(function (node) {{ return (node.type || "Paper") === type; }});
+      }});
+    }}
+
+    function drawCategoryLabels(nodes, width) {{
+      const types = visibleCategoryTypes(nodes);
+      const columnWidth = width / Math.max(1, types.length);
+      types.forEach(function (type, index) {{
+        const label = makeSvg("text", {{
+          class: "category-label",
+          x: columnWidth * index + columnWidth / 2,
+          y: 36,
+          "text-anchor": "middle"
+        }});
         label.textContent = type;
         appendGraph(label);
       }});
@@ -1253,7 +1260,8 @@ def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
       if (state.view === "category") {{
         const anchorLeft = point.x > width * 0.72;
         const textX = anchorLeft ? -20 : 20;
-        const maxLength = Math.max(14, Math.min(24, Math.floor(width / Math.max(1, nodeTypes.length) / 8)));
+        const categoryCount = Math.max(1, visibleCategoryTypes(visibleNodes()).length);
+        const maxLength = Math.max(18, Math.min(30, Math.floor(width / categoryCount / 7)));
         const rectWidth = maxLength * 6.4 + 18;
         return {{
           maxLength: maxLength,

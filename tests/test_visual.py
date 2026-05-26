@@ -56,6 +56,7 @@ def test_render_visual_html_embeds_graph_data():
     assert "startItemDrag" in html
     assert "clipPath" in html
     assert "safeDomId" in html
+    assert "visibleCategoryTypes" in html
     assert 'html[data-theme="dark"]' in html
     assert 'html[data-theme="light"]' in html
 
