@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from research_os.config import Hub
+from research_os.staleness import visual_fingerprint, visual_metadata_comment
 
 
 GRAPH_DATA_PLACEHOLDER = "__RESEARCH_OS_GRAPH_DATA__"
@@ -31,7 +32,8 @@ def script_json(value: Any) -> str:
 
 def render_visual_html(graph: dict[str, list[dict[str, Any]]]) -> str:
     template = visual_template()
-    return template.replace(GRAPH_DATA_PLACEHOLDER, script_json(graph))
+    html = template.replace(GRAPH_DATA_PLACEHOLDER, script_json(graph))
+    return f"{visual_metadata_comment(visual_fingerprint(graph))}\n{html}"
 
 
 def visual_template() -> str:

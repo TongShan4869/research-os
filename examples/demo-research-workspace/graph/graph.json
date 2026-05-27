@@ -86,6 +86,10 @@
       "type": "has_concept"
     }
   ],
+  "metadata": {
+    "research_os_fingerprint": "0ad60e2ad58ebc2d",
+    "research_os_fingerprint_version": 1
+  },
   "nodes": [
     {
       "id": "project:auditory-demo",

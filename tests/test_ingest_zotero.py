@@ -35,6 +35,14 @@ class FakeZoteroClient:
                     "publicationTitle": "Scientific Reports",
                     "DOI": "10.1038/s41598-023-50438-0",
                     "citationKey": "shanSubcorticalResponsesMusic2024",
+                    "abstractNote": (
+                        "Auditory brainstem responses to continuous speech and music were compared "
+                        "with cortical responses."
+                    ),
+                    "tags": [
+                        {"tag": "auditory brainstem response"},
+                        {"tag": "continuous speech"},
+                    ],
                     "creators": [
                         {"firstName": "Tong", "lastName": "Shan", "creatorType": "author"},
                         {"firstName": "Ross K.", "lastName": "Maddox", "creatorType": "author"},
@@ -65,6 +73,8 @@ def test_ingest_zotero_collection_creates_collection_and_paper_notes(tmp_path: P
     assert "[[Sources/Papers/shanSubcorticalResponsesMusic2024|" in collection_text
     assert "zotero_item_key: GBEMXBSK" in paper_text
     assert "zotero_attachment_key: REBSD7ZN" in paper_text
+    assert "  - concept/auditory-brainstem-response" in paper_text
+    assert "  - concept/continuous-speech" in paper_text
     assert "zotero://select/library/items/GBEMXBSK" in paper_text
     assert "zotero://open-pdf/library/items/REBSD7ZN" in paper_text
     assert "## [" in wiki_log
@@ -82,8 +92,24 @@ def test_ingest_zotero_collection_creates_collection_and_paper_notes(tmp_path: P
             "zotero_attachment_key": "REBSD7ZN",
             "citation_key": "shanSubcorticalResponsesMusic2024",
             "doi": "10.1038/s41598-023-50438-0",
+            "abstract": (
+                "Auditory brainstem responses to continuous speech and music were compared "
+                "with cortical responses."
+            ),
+            "publication_title": "Scientific Reports",
+            "date": "2024-01-08",
+            "creators": ["Tong Shan", "Ross K. Maddox"],
+            "zotero_tags": ["auditory brainstem response", "continuous speech"],
             "projects": ["auditory-demo"],
-            "concepts": [],
+            "concepts": ["auditory-brainstem-response", "continuous-speech"],
+            "classification": {
+                "status": "metadata",
+                "concepts": ["auditory-brainstem-response", "continuous-speech"],
+                "evidence": [
+                    {"concept": "auditory-brainstem-response", "fields": ["abstract", "tags"]},
+                    {"concept": "continuous-speech", "fields": ["abstract", "tags"]},
+                ],
+            },
             "provider": {"name": "zotero", "key": "GBEMXBSK", "attachment_key": "REBSD7ZN"},
         }
     ]

@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from research_os.config import Hub, load_files, load_projects, load_relations, load_sources
+from research_os.staleness import graph_with_fingerprint
 
-Graph = dict[str, list[dict[str, Any]]]
+Graph = dict[str, Any]
 
 
 def build_graph(hub: Hub) -> Graph:
@@ -361,10 +362,10 @@ def safe_id(value: str) -> str:
     return safe or "unknown"
 
 
-def write_graph(hub: Hub, graph: dict[str, list[dict[str, Any]]]) -> Path:
+def write_graph(hub: Hub, graph: dict[str, Any]) -> Path:
     graph_path = hub.path / "graph" / "graph.json"
     graph_path.parent.mkdir(parents=True, exist_ok=True)
-    graph_path.write_text(json.dumps(graph, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    graph_path.write_text(json.dumps(graph_with_fingerprint(hub, graph), indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return graph_path
 
 

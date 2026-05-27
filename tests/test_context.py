@@ -133,6 +133,53 @@ def test_context_packet_includes_relevant_wiki_pages(tmp_path: Path, capsys):
     ]
 
 
+def test_context_packet_includes_wiki_excerpts_and_graph_neighbors(tmp_path: Path, capsys):
+    hub = tmp_path / "ResearchOS"
+    assert main(["init", str(hub)]) == 0
+    projects = [
+        {
+            "id": "auditory-demo",
+            "title": "Auditory Demo",
+            "concepts": ["auditory-brainstem-response"],
+        }
+    ]
+    sources = [
+        {
+            "id": "paper:smith-2024",
+            "type": "Paper",
+            "title": "Auditory Brainstem Responses",
+            "projects": ["auditory-demo"],
+            "concepts": ["auditory-brainstem-response"],
+        }
+    ]
+    vault = hub / "obsidian" / "starter-vault"
+    (vault / "index.md").write_text(
+        "# Wiki Index\n\n- [[Synthesis/auditory-demo|ABR synthesis]] - project synthesis for auditory-demo\n",
+        encoding="utf-8",
+    )
+    (vault / "Synthesis").mkdir(exist_ok=True)
+    (vault / "Synthesis" / "auditory-demo.md").write_text(
+        "# ABR synthesis\n\nThe ABR project tracks subcortical response papers and reusable analysis context.\n",
+        encoding="utf-8",
+    )
+    (hub / "registries" / "projects.yaml").write_text(yaml.safe_dump(projects, sort_keys=False), encoding="utf-8")
+    (hub / "registries" / "sources.yaml").write_text(yaml.safe_dump(sources, sort_keys=False), encoding="utf-8")
+    capsys.readouterr()
+
+    assert main(["context", "auditory-demo", "--hub", str(hub), "--json"]) == 0
+
+    packet = json.loads(capsys.readouterr().out)
+    assert packet["wiki_pages"][0]["excerpt"] == (
+        "The ABR project tracks subcortical response papers and reusable analysis context."
+    )
+    assert {
+        "node_id": "concept:auditory-brainstem-response",
+        "title": "auditory brainstem response",
+        "type": "Concept",
+        "relation": "out:has_concept",
+    } in packet["graph_neighbors"]
+
+
 def test_context_resolves_project_source_file_folder_collection_and_wiki_terms(tmp_path: Path, capsys):
     hub = tmp_path / "ResearchOS"
     assert main(["init", str(hub)]) == 0

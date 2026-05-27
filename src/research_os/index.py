@@ -8,6 +8,7 @@ from typing import Any
 from research_os.config import Hub, load_files, load_inbox, load_projects, load_relations, load_sources
 from research_os.graph import graph_from_registries
 from research_os.paths import obsidian_vault_path
+from research_os.staleness import FINGERPRINT_KEY, FINGERPRINT_VERSION, FINGERPRINT_VERSION_KEY, home_fingerprint
 from research_os.wiki import count_pending_wiki_integrations, folder_guide_markdown_table, wiki_page_count
 
 
@@ -28,6 +29,7 @@ def build_index(hub: Hub) -> Path:
             relations,
             wiki_pending=count_pending_wiki_integrations(hub),
             wiki_pages=wiki_page_count(hub),
+            fingerprint=home_fingerprint(hub),
         ),
     )
     return home_path
@@ -41,6 +43,7 @@ def render_home(
     relations: list[dict[str, Any]] | None = None,
     wiki_pending: int = 0,
     wiki_pages: int = 0,
+    fingerprint: str | None = None,
 ) -> str:
     inbox = inbox or []
     files = files or []
@@ -49,6 +52,7 @@ def render_home(
     lines = [
         "---",
         "type: research_os_home",
+        *(fingerprint_frontmatter(fingerprint)),
         "tags:",
         "  - research-os/home",
         "---",
@@ -91,6 +95,7 @@ def render_home(
             "",
             "## Context Readiness",
             "",
+            *fingerprint_lines(fingerprint),
             f"- Pending inbox proposals: {count_pending_inbox(inbox)}",
             f"- Confirmed indexed files: {len(files)}",
             f"- Projects with folders: {count_projects_with_folders(projects)}",
@@ -104,6 +109,21 @@ def render_home(
         ]
     )
     return "\n".join(lines)
+
+
+def fingerprint_frontmatter(fingerprint: str | None) -> list[str]:
+    if fingerprint is None:
+        return []
+    return [
+        f"{FINGERPRINT_KEY}: {fingerprint}",
+        f"{FINGERPRINT_VERSION_KEY}: {FINGERPRINT_VERSION}",
+    ]
+
+
+def fingerprint_lines(fingerprint: str | None) -> list[str]:
+    if fingerprint is None:
+        return []
+    return [f"- Home context fingerprint: `{fingerprint}`"]
 
 
 def project_table_rows(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -> list[str]:

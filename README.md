@@ -57,12 +57,13 @@ Research OS is not trying to replace Zotero, Obsidian, or normal project folders
 - Tracks papers and other sources in `registries/sources.yaml`.
 - Tracks provider-neutral files in `registries/files.yaml` and explicit links in `registries/relations.yaml`.
 - Proposes unconfirmed file assignments in `registries/inbox.yaml` before mutating the confirmed index.
-- Emits agent-ready context packets for projects, sources, tags, and files.
+- Emits agent-ready context packets for projects, sources, tags, files, wiki excerpts, and graph-neighbor summaries.
+- Stamps generated context surfaces with fingerprints so agents can detect stale `Home.md`, `graph.json`, and visual explorer output.
 - Maintains a Karpathy-style LLM wiki core in Obsidian: `index.md`, `log.md`, synthesis pages, entity pages, claims, methods, datasets, and results.
 - Generates an Obsidian `Home.md` project cockpit.
 - Generates `graph/graph.json` for linked project/source context.
 - Generates a static `visual/index.html` explorer for browsing the research graph.
-- Connects papers to Zotero when Zotero is available.
+- Connects papers to Zotero when Zotero is available, captures Zotero metadata, and assigns explainable concept tags from title, abstract, and Zotero tags.
 - Gives Codex startup instructions through `AGENTS.md`, similar in spirit to Claude Code's `CLAUDE.md`.
 
 ## Mental Model
@@ -243,6 +244,7 @@ Build generated context:
 research-os build-index --hub ~/ResearchOS
 research-os build-graph --hub ~/ResearchOS
 research-os build-visual --hub ~/ResearchOS
+research-os context-health --hub ~/ResearchOS
 ```
 
 Open `~/ResearchOS/visual/index.html` in a browser to inspect the generated visual map.
@@ -263,6 +265,14 @@ research-os confirm-proposal proposal:projects-auditory-demo-data-raw.csv --hub 
 ```
 
 `scan` is safe by default. Without `--apply`, it prints proposal counts only. With `--apply`, it writes pending proposals to `registries/inbox.yaml`; it does not confirm files or attach folders to projects. Use `confirm-proposal` to promote exactly one pending proposal into `registries/files.yaml`.
+
+Consume one queued wiki integration item:
+
+```bash
+research-os integrate-source paper:smith-2024 --hub ~/ResearchOS
+```
+
+The first slice is metadata-only: it requires an existing unchecked item in `wiki/inbox.md`, marks that item complete, and appends to `log.md`. It does not read PDFs or full text.
 
 ## LLM Wiki Core
 
@@ -314,7 +324,9 @@ The visual explorer is a static React Flow page generated from the current `grap
 
 - `Zotero Library` is the canonical home for paper collections and paper pills.
 - `Global Wiki` is the canonical home for concepts.
+- `Workspace Context` keeps folders, datasets, figures, manuscripts, notes, and code surfaces visible instead of hiding non-paper graph nodes.
 - Project cards connect to the papers and concepts they use through edges, without duplicating those nodes.
+- Search keeps direct neighbors visible for matching nodes, so filtered views still preserve local context.
 - Clicking a project opens its surrounding context by expanding the linked library and wiki regions.
 - The right inspector shows selected-node metadata, direct neighbors, and compact graph counts.
 
@@ -352,6 +364,8 @@ This creates or updates:
 - `Sources/Papers/<citation-key>.md`
 - `registries/sources.yaml`
 - `graph/graph.json`
+
+Ingest reads Zotero item metadata only: title, abstract note, publication title, date, creators, DOI, and Zotero tags. It stores that metadata in Research OS, assigns concept tags with evidence, and leaves Zotero itself unchanged.
 
 Paper notes include Zotero deep links when available:
 

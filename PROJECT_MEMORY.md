@@ -31,7 +31,9 @@ Files and apps remain where they are. Research OS indexes what they mean and how
 - Zotero is optional. It is a metadata provider for citation keys, item keys, PDF links, collections, and bibliographic metadata.
 - Zotero should remain read-only unless the user explicitly asks to mutate Zotero records.
 - The future architecture should evolve from "Zotero ingest" toward "source ingest" with multiple providers.
+- Zotero ingest now captures metadata-only fields such as abstract note, publication title, date, creators, and Zotero tags, then assigns explainable Research OS concepts from title/abstract/tag evidence. It still does not read PDFs/full text.
 - Research OS now has the first provider-neutral control-plane slice: `files.yaml`, `relations.yaml`, `inbox.yaml`, `research-os scan`, and `research-os context`.
+- Research OS applies hash/staleness discipline to existing generated surfaces: `Home.md`, `graph/graph.json`, and `visual/index.html` are stamped with input fingerprints, and `research-os context-health` reports current/stale/missing/untracked state.
 - Research OS now adapts Karpathy's LLM wiki pattern: raw sources remain authoritative, registries are the machine-readable control plane, and Obsidian contains an LLM-maintained wiki core with `index.md`, `log.md`, `wiki/inbox.md`, and synthesis/entity/claim/method/dataset/result pages.
 
 ## Important Conceptual Model
@@ -93,8 +95,10 @@ build-graph
 build-index
 build-visual
 context
+context-health
 scan
 confirm-proposal
+integrate-source
 zotero-status
 doctor
 ingest-zotero-collection
@@ -107,9 +111,11 @@ Implemented modules:
 - `src/research_os/projects.py`: project creation, folder attachment, marker resolution.
 - `src/research_os/graph.py`: `graph/graph.json` generation.
 - `src/research_os/index.py`: Obsidian `Home.md` generation.
-- `src/research_os/ingest.py`: Zotero collection ingest into notes and source registry.
-- `src/research_os/context.py`: agent context packet generation for projects, sources, tags, and files.
+- `src/research_os/ingest.py`: Zotero collection ingest into notes and source registry, including metadata-only concept classification.
+- `src/research_os/integrate.py`: first CLI-assisted Stage 2 wiki integration slice; consumes one queued `wiki/inbox.md` source item, marks it complete, and logs metadata-only integration.
+- `src/research_os/context.py`: agent context packet generation for projects, sources, tags, files, wiki excerpts, and graph-neighbor summaries.
 - `src/research_os/scan.py`: local project-folder scanner that writes pending inbox proposals only with `--apply`.
+- `src/research_os/staleness.py`: fingerprints and context-health checks for generated context surfaces.
 - `src/research_os/wiki.py`: wiki index/log/inbox helpers and wiki page lookup for context packets.
 - `src/research_os/paths.py`: shared hub path helpers.
 - `src/research_os/validation.py`: hub validation.
@@ -238,10 +244,9 @@ python -m pip wheel . --no-deps --no-build-isolation -w /private/tmp/research-os
 
 Strong next product slice:
 
-1. Implement the Stage 2 `integrate-source` workflow as a CLI-assisted flow that consumes one `wiki/inbox.md` item.
-2. Teach `scan` user correction memory so repeated classifications improve.
-3. Expand context packets to include note excerpts and graph-neighbor summaries when useful.
-4. Make the visual explorer show pending inbox/wiki integration items as reviewable islands.
+1. Expand `integrate-source` beyond metadata-only completion into source-note and existing synthesis/concept page section updates.
+2. Grow metadata classification from the initial deterministic keyword map into a user-editable project vocabulary with correction memory.
+3. Make the visual explorer show pending inbox/wiki integration items as reviewable islands.
 
 Suggested design direction:
 

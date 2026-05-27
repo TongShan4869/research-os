@@ -14,6 +14,24 @@ from research_os.projects import find_project
 from research_os.wiki import append_wiki_log, queue_wiki_integration
 
 
+CONCEPT_KEYWORDS = {
+    "auditory-brainstem-response": [
+        "auditory brainstem response",
+        "auditory brainstem responses",
+        "abr",
+    ],
+    "continuous-speech": [
+        "continuous speech",
+        "natural speech",
+    ],
+    "frequency-following-response": [
+        "frequency-following response",
+        "frequency following response",
+        "ffr",
+    ],
+}
+
+
 @dataclass(frozen=True)
 class IngestResult:
     collection_name: str
@@ -105,6 +123,11 @@ def source_entry_from_zotero_item(item: dict[str, Any], project_id: str) -> dict
         "concepts": [],
         "provider": {"name": "zotero", "key": item_key},
     }
+    add_zotero_metadata(entry, data)
+    classification = classify_source_metadata(entry)
+    if classification["concepts"]:
+        entry["concepts"] = classification["concepts"]
+        entry["classification"] = classification
     attachment_key = pdf_attachment_key(item)
     if attachment_key is not None:
         entry["zotero_attachment_key"] = attachment_key
@@ -113,6 +136,78 @@ def source_entry_from_zotero_item(item: dict[str, Any], project_id: str) -> dict
     if isinstance(doi, str) and doi:
         entry["doi"] = doi
     return entry
+
+
+def add_zotero_metadata(entry: dict[str, Any], data: dict[str, Any]) -> None:
+    metadata_fields = {
+        "abstract": data.get("abstractNote"),
+        "publication_title": data.get("publicationTitle"),
+        "date": data.get("date"),
+    }
+    for key, value in metadata_fields.items():
+        if isinstance(value, str) and value.strip():
+            entry[key] = value.strip()
+    creators = creator_names(data.get("creators"))
+    if creators:
+        entry["creators"] = creators
+    zotero_tags = zotero_tag_names(data.get("tags"))
+    if zotero_tags:
+        entry["zotero_tags"] = zotero_tags
+
+
+def creator_names(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    names: list[str] = []
+    for creator in value:
+        if not isinstance(creator, dict):
+            continue
+        name = creator_name(creator)
+        if name:
+            names.append(name)
+    return names
+
+
+def creator_name(creator: dict[str, Any]) -> str | None:
+    name = creator.get("name")
+    if isinstance(name, str) and name.strip():
+        return name.strip()
+    parts = [creator.get("firstName"), creator.get("lastName")]
+    full_name = " ".join(part.strip() for part in parts if isinstance(part, str) and part.strip())
+    return full_name or None
+
+
+def zotero_tag_names(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    tags: list[str] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        tag = item.get("tag")
+        if isinstance(tag, str) and tag.strip():
+            tags.append(tag.strip())
+    return tags
+
+
+def classify_source_metadata(entry: dict[str, Any]) -> dict[str, Any]:
+    field_text = {
+        "title": string_value(entry.get("title")) or "",
+        "abstract": string_value(entry.get("abstract")) or "",
+        "tags": " ".join(string_list(entry.get("zotero_tags"))),
+    }
+    concepts: list[str] = []
+    evidence: list[dict[str, Any]] = []
+    for concept, keywords in CONCEPT_KEYWORDS.items():
+        matched_fields = [
+            field
+            for field, text in field_text.items()
+            if text and any(keyword in text.casefold() for keyword in keywords)
+        ]
+        if matched_fields:
+            concepts.append(concept)
+            evidence.append({"concept": concept, "fields": matched_fields})
+    return {"status": "metadata", "concepts": concepts, "evidence": evidence}
 
 
 def pdf_attachment_key(item: dict[str, Any]) -> str | None:
@@ -176,6 +271,7 @@ def render_paper_note(entry: dict[str, Any], collection_name: str) -> str:
             "  - research-os/source",
             f"  - project/{entry['projects'][0]}",
             f"  - zotero/collection/{safe_tag(collection_name)}",
+            *[f"  - concept/{safe_tag(concept)}" for concept in string_list(entry.get("concepts"))],
             "---",
             "",
             f"# {entry['title']}",
@@ -241,3 +337,16 @@ def yaml_quote(value: str) -> str:
     if re.search(r"[:#\n]", value):
         return repr(value)
     return value
+
+
+def string_value(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+def string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item.strip() for item in value if isinstance(item, str) and item.strip()]

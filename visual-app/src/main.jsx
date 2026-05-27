@@ -47,6 +47,14 @@ const BLOCKS = {
     description: "Shared concepts and tags, overlaid by the projects that use them.",
     color: TYPE_THEME.Concept.color,
   },
+  context: {
+    id: "block:context",
+    title: "Context Surfaces",
+    eyebrow: "Files",
+    status: "indexed surfaces",
+    description: "Folders, datasets, figures, manuscripts, notes, and code surfaces attached to research work.",
+    color: TYPE_THEME.Folder.color,
+  },
 };
 
 function loadGraphData() {
@@ -60,10 +68,21 @@ function loadGraphData() {
 }
 
 function normalizeGraph(graph) {
-  const nodes = Array.isArray(graph.nodes) ? graph.nodes : [];
+  const nodes = Array.isArray(graph.nodes) ? graph.nodes.map((node) => ({
+    ...node,
+    searchText: searchableText(node),
+  })) : [];
   const edges = Array.isArray(graph.edges) ? graph.edges : [];
   const byId = new Map(nodes.map((node) => [node.id, node]));
   return { nodes, edges, byId };
+}
+
+function searchableText(value) {
+  if (value == null) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value).toLowerCase();
+  if (Array.isArray(value)) return value.map(searchableText).join(" ");
+  if (typeof value === "object") return Object.values(value).map(searchableText).join(" ");
+  return "";
 }
 
 function nodeType(node) {
@@ -147,6 +166,33 @@ function buildProjectConnections(graph, visibleIds) {
   dedupeMap(collectionsByProject);
 
   return { projectNodes, paperNodes, conceptNodes, collectionNodes, papersByProject, conceptsByProject, collectionsByProject };
+}
+
+function contextualNodes(graph, visibleIds) {
+  return graph.nodes
+    .filter((node) => visibleIds.has(node.id))
+    .filter((node) => !["Project", "Paper", "Concept", "Collection"].includes(nodeType(node)))
+    .sort((left, right) => nodeType(left).localeCompare(nodeType(right)) || nodeTitle(left).localeCompare(nodeTitle(right)));
+}
+
+function visibleGraphIds(graph, activeTypes, query) {
+  const activeIds = new Set(graph.nodes.filter((node) => activeTypes.has(nodeType(node))).map((node) => node.id));
+  if (!query) return activeIds;
+
+  const matchingIds = new Set(
+    graph.nodes
+      .filter((node) => activeIds.has(node.id))
+      .filter((node) => node.searchText.includes(query))
+      .map((node) => node.id),
+  );
+  const visibleIds = new Set(matchingIds);
+
+  for (const edge of graph.edges) {
+    if (matchingIds.has(edge.source) && activeIds.has(edge.target)) visibleIds.add(edge.target);
+    if (matchingIds.has(edge.target) && activeIds.has(edge.source)) visibleIds.add(edge.source);
+  }
+
+  return visibleIds;
 }
 
 function collectionGroups(graph, visibleIds) {
@@ -237,12 +283,8 @@ function boardEdge(source, target, label, options = {}) {
 
 function buildBoard(graph, state) {
   const query = state.search.trim().toLowerCase();
-  const visibleIds = new Set(
-    graph.nodes
-      .filter((node) => state.activeTypes.has(nodeType(node)))
-      .filter((node) => !query || JSON.stringify(node).toLowerCase().includes(query))
-      .map((node) => node.id),
-  );
+  const activeNodeIds = new Set(graph.nodes.filter((node) => state.activeTypes.has(nodeType(node))).map((node) => node.id));
+  const visibleIds = visibleGraphIds(graph, state.activeTypes, query);
 
   const {
     projectNodes,
@@ -254,6 +296,7 @@ function buildBoard(graph, state) {
   } = buildProjectConnections(graph, visibleIds);
   const collectionData = collectionGroups(graph, visibleIds);
   const wikiClusters = conceptClusters(graph, visibleIds);
+  const contextNodes = contextualNodes(graph, visibleIds);
 
   const nodes = [];
   const edges = [];
@@ -280,6 +323,12 @@ function buildBoard(graph, state) {
       count: plural(conceptNodes.length, "concept"),
       expanded: state.expanded.has(BLOCKS.wiki.id),
     }));
+  addVisibleNode(boardNode(BLOCKS.context.id, { x: -145, y: 260 }, {
+      variant: "block",
+      ...BLOCKS.context,
+      count: plural(contextNodes.length, "surface"),
+      expanded: state.expanded.has(BLOCKS.context.id),
+    }));
 
   projectNodes.forEach((project, index) => {
     const x = projectNodes.length === 1 ? -145 : projectStart + index * projectSpacing;
@@ -299,10 +348,17 @@ function buildBoard(graph, state) {
 
     if (paperCount) edges.push(boardEdge(BLOCKS.zotero.id, id, plural(paperCount, "paper"), { color: TYPE_THEME.Collection.color, focused: state.focusId === BLOCKS.zotero.id || state.focusId === id }));
     if (conceptCount) edges.push(boardEdge(BLOCKS.wiki.id, id, plural(conceptCount, "concept"), { color: TYPE_THEME.Concept.color, focused: state.focusId === BLOCKS.wiki.id || state.focusId === id }));
+    const projectContextNodes = contextNodes.filter((contextNode) => graph.edges.some((edge) => edge.source === id && edge.target === contextNode.id));
+    if (projectContextNodes.length) {
+      edges.push(boardEdge(id, BLOCKS.context.id, plural(projectContextNodes.length, "surface"), {
+        color: TYPE_THEME.Folder.color,
+        focused: state.focusId === BLOCKS.context.id || state.focusId === id,
+      }));
+    }
   });
 
   if (state.expanded.has(BLOCKS.zotero.id)) {
-    collectionData.slice(0, 10).forEach((group, index) => {
+    collectionData.forEach((group, index) => {
       const itemId = `library:${group.collection.id}`;
       const itemExpanded = state.expanded.has(itemId);
       const y = 120 + index * (itemExpanded ? 320 : 82);
@@ -320,7 +376,7 @@ function buildBoard(graph, state) {
       edges.push(boardEdge(BLOCKS.zotero.id, itemId, group.papers.length ? String(group.papers.length) : "", { color: TYPE_THEME.Collection.color }));
 
       if (itemExpanded) {
-        group.papers.slice(0, 10).forEach((paper, paperIndex) => {
+        group.papers.forEach((paper, paperIndex) => {
           const paperId = `${itemId}:paper:${paper.id}`;
           const added = addVisibleNode(boardNode(paperId, { x: -660 + (paperIndex % 2) * 170, y: y + 115 + Math.floor(paperIndex / 2) * 52 }, {
             variant: "pill",
@@ -346,7 +402,7 @@ function buildBoard(graph, state) {
   }
 
   if (state.expanded.has(BLOCKS.wiki.id)) {
-    wikiClusters.slice(0, 12).forEach((cluster, index) => {
+    wikiClusters.forEach((cluster, index) => {
       const itemId = `wiki:${cluster.concept.id}`;
       const y = 120 + index * 76;
       addVisibleNode(boardNode(itemId, { x: 560, y }, {
@@ -370,6 +426,31 @@ function buildBoard(graph, state) {
     });
   }
 
+  if (state.expanded.has(BLOCKS.context.id)) {
+    contextNodes.forEach((contextNode, index) => {
+      const contextId = `context:${contextNode.id}`;
+      const x = -320 + (index % 3) * 210;
+      const y = 430 + Math.floor(index / 3) * 74;
+      const theme = TYPE_THEME[nodeType(contextNode)] || TYPE_THEME.Folder;
+      addVisibleNode(boardNode(contextId, { x, y }, {
+        variant: "pill",
+        node: contextNode,
+        title: nodeTitle(contextNode),
+        eyebrow: nodeType(contextNode),
+        color: theme.color,
+      }));
+      edges.push(boardEdge(BLOCKS.context.id, contextId, "", { color: theme.color }));
+      for (const edge of graph.edges) {
+        if (edge.target === contextNode.id && visibleIds.has(edge.source)) {
+          edges.push(boardEdge(edge.source, contextId, edge.type === "attached_folder" ? "" : edge.type, {
+            color: theme.color,
+            focused: state.focusId === edge.source || state.focusId === contextId,
+          }));
+        }
+      }
+    });
+  }
+
   if (state.focusId) {
     const focusNeighbors = new Set([state.focusId]);
     for (const edge of edges) {
@@ -384,10 +465,13 @@ function buildBoard(graph, state) {
   const counts = {
     nodes: graph.nodes.length,
     edges: graph.edges.length,
+    visibleNodes: visibleIds.size,
+    activeNodes: activeNodeIds.size,
     projects: projectNodes.length,
     papers: paperNodes.length,
     concepts: conceptNodes.length,
     collections: collectionNodes.length,
+    context: contextNodes.length,
   };
 
   return { nodes, edges, counts, visibleIds };
@@ -445,12 +529,15 @@ function GraphSnapshot({ counts }) {
     <section className="graph-snapshot">
       <h3>Graph Snapshot</h3>
       <div className="snapshot-grid">
+        <div><strong>{counts.visibleNodes}</strong><span>Shown</span></div>
+        <div><strong>{counts.activeNodes}</strong><span>In Filters</span></div>
         <div><strong>{counts.nodes}</strong><span>Nodes</span></div>
         <div><strong>{counts.edges}</strong><span>Edges</span></div>
         <div><strong>{counts.projects}</strong><span>Projects</span></div>
         <div><strong>{counts.papers}</strong><span>Papers</span></div>
         <div><strong>{counts.concepts}</strong><span>Concepts</span></div>
         <div><strong>{counts.collections}</strong><span>Collections</span></div>
+        <div><strong>{counts.context}</strong><span>Surfaces</span></div>
       </div>
     </section>
   );
@@ -571,6 +658,7 @@ function App() {
         if (id.startsWith("project:")) {
           next.add(BLOCKS.zotero.id);
           next.add(BLOCKS.wiki.id);
+          next.add(BLOCKS.context.id);
         }
       }
       return next;
@@ -608,11 +696,12 @@ function App() {
           <span>Visual Explorer</span>
         </div>
         <div className="mode-chip">Universe</div>
+        <div className="mode-chip">{board.counts.visibleNodes}/{board.counts.nodes} shown</div>
         <input
           className="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search projects, papers, concepts"
+          placeholder="Search projects, papers, concepts, files"
           type="search"
         />
         <button type="button" onClick={() => setFitSignal((value) => value + 1)}>Reset View</button>

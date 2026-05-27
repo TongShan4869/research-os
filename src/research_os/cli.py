@@ -10,8 +10,10 @@ from research_os.config import HubError, load_hub, load_projects, load_sources
 from research_os.graph import build_graph, read_graph, write_graph
 from research_os.index import build_index
 from research_os.ingest import ingest_zotero_collection
+from research_os.integrate import integrate_source
 from research_os.projects import attach_folder, create_project, load_optional_hub, resolve_project
 from research_os.scan import apply_scan, confirm_proposal, scan_hub
+from research_os.staleness import context_health, render_context_health
 from research_os.validation import validate_hub
 from research_os.visual import write_visual
 from research_os.zotero import ZoteroLocalClient, check_zotero
@@ -79,6 +81,13 @@ def build_parser() -> argparse.ArgumentParser:
     add_hub_argument(context_parser)
     context_parser.set_defaults(handler=run_context)
 
+    context_health_parser = subparsers.add_parser(
+        "context-health",
+        help="Report whether generated Research OS context surfaces are current.",
+    )
+    add_hub_argument(context_health_parser)
+    context_health_parser.set_defaults(handler=run_context_health)
+
     scan_parser = subparsers.add_parser("scan", help="Propose file index assignments for configured project folders.")
     scan_parser.add_argument("--apply", action="store_true", help="Write pending proposals to registries/inbox.yaml.")
     scan_parser.add_argument("--ignore", action="append", default=[], help="Folder or file name to skip during scan. Repeatable.")
@@ -103,6 +112,14 @@ def build_parser() -> argparse.ArgumentParser:
     ingest_collection_parser.add_argument("--project", required=True, help="Research OS project id to link papers to.")
     add_hub_argument(ingest_collection_parser)
     ingest_collection_parser.set_defaults(handler=run_ingest_zotero_collection)
+
+    integrate_source_parser = subparsers.add_parser(
+        "integrate-source",
+        help="Consume one queued wiki integration item for a registered source.",
+    )
+    integrate_source_parser.add_argument("source_id")
+    add_hub_argument(integrate_source_parser)
+    integrate_source_parser.set_defaults(handler=run_integrate_source)
 
     return parser
 
@@ -270,6 +287,17 @@ def run_context(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_context_health(args: argparse.Namespace) -> int:
+    try:
+        hub = load_hub(args.hub)
+        statuses = context_health(hub)
+    except HubError as error:
+        print(error)
+        return 1
+    print(render_context_health(statuses), end="")
+    return 0 if all(status.status == "current" for status in statuses) else 1
+
+
 def run_scan(args: argparse.Namespace) -> int:
     try:
         hub = load_hub(args.hub)
@@ -338,6 +366,18 @@ def run_ingest_zotero_collection(args: argparse.Namespace) -> int:
     print(f"ingested Zotero collection: {result.collection_name} ({result.collection_key})")
     print(f"papers: {result.item_count}")
     print(f"vault: {result.vault_path}")
+    return 0
+
+
+def run_integrate_source(args: argparse.Namespace) -> int:
+    try:
+        hub = load_hub(args.hub)
+        result = integrate_source(hub, args.source_id)
+    except HubError as error:
+        print(error)
+        return 1
+    print(f"integrated source: {result.source_id}")
+    print(f"adapter: {result.adapter}")
     return 0
 
 
