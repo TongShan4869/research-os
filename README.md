@@ -2,6 +2,43 @@
 
 Research OS is a local-first indexing layer for scientific research. It helps Codex understand how projects, papers, notes, folders, data, figures, manuscripts, and external tools relate to each other.
 
+## For Agents: Start Here
+
+If a user sends you this GitHub repo and asks to set up Research OS, do the setup for them. Do not ask them to clone the repo.
+
+1. Install Research OS directly from the GitHub zip:
+
+```bash
+python -m pip install "https://github.com/TongShan4869/research-os/archive/refs/heads/main.zip"
+```
+
+2. Create the user's hub, using `~/ResearchOS` unless they ask for another location:
+
+```bash
+research-os init ~/ResearchOS
+```
+
+3. Start onboarding with questions, not instructions:
+
+```text
+I created your Research OS hub. Do you want to use the starter Obsidian vault or connect an existing vault?
+Should I check Zotero Desktop?
+What is the first research project or folder you want indexed?
+```
+
+4. Run the setup commands yourself as the user answers:
+
+```bash
+research-os status --hub ~/ResearchOS
+research-os validate --hub ~/ResearchOS
+research-os doctor --hub ~/ResearchOS
+research-os build-index --hub ~/ResearchOS
+research-os build-graph --hub ~/ResearchOS
+research-os build-visual --hub ~/ResearchOS
+```
+
+Only developers need to clone this repository. Regular users should be able to hand the GitHub link to an agent and then answer onboarding questions.
+
 The core idea is simple: files and apps remain where they are, but their context is indexed in one place.
 
 ```text
@@ -116,9 +153,16 @@ Explicit relations connect entities across providers:
   tests/                            pytest coverage
 ```
 
-## Install From This Repo
+## Install
 
-For local development:
+For regular users, an agent should install Research OS directly from GitHub:
+
+```bash
+python -m pip install "https://github.com/TongShan4869/research-os/archive/refs/heads/main.zip"
+research-os --help
+```
+
+For local development from a cloned repo:
 
 ```bash
 python -m pip install -e .
@@ -133,13 +177,13 @@ PYTHONPATH=src python -m research_os.cli --help
 
 ## Codex Skill
 
-This repo includes an installable Codex skill that turns Codex into a Research OS onboarding guide:
+This repo also includes an installable Codex skill that turns Codex into a Research OS onboarding guide:
 
 ```text
 src/research_os/skills/research-os
 ```
 
-Use it when you want an agent to install Research OS, create or inspect a hub, connect Obsidian/Zotero/project folders, and walk a user through the safe indexing workflow.
+Use it when you want an agent to install Research OS, create or inspect a hub, connect Obsidian/Zotero/project folders, and walk a user through the safe indexing workflow. The skill is helpful, but it should not be a prerequisite for ordinary users: an agent can follow the "For Agents: Start Here" section from the GitHub link alone.
 
 After installing the skill in Codex, ask:
 
@@ -149,7 +193,7 @@ Use $research-os to install Research OS and guide me through onboarding my resea
 
 The skill teaches the agent to:
 
-- install the CLI with `python -m pip install -e .` or use the `PYTHONPATH=src` fallback
+- install the CLI directly from the GitHub zip for users, or with `python -m pip install -e .` for local development
 - create or open a hub with `research-os init`
 - check `research-os.yaml`, validate the hub, and run doctor checks
 - ask before using Zotero, reading PDFs, attaching folders, or confirming scan proposals

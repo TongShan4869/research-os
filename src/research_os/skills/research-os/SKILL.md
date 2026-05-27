@@ -1,6 +1,6 @@
 ---
 name: research-os
-description: Use when a user wants to install, initialize, onboard, or use Research OS, a local-first indexed research workspace. Guides agents through setting up the CLI, creating a hub, connecting Obsidian/Zotero/project folders, validating registries, building Home.md/graph/visual outputs, and teaching the user the safe Research OS workflow.
+description: Use when a user wants to install, initialize, onboard, or use Research OS, a local-first indexed research workspace. Guides agents to install directly from the GitHub link without asking users to clone, create a hub, ask onboarding questions, connect Obsidian/Zotero/project folders, validate registries, and build Home.md/graph/visual outputs.
 metadata:
   short-description: Install and onboard Research OS workspaces
 ---
@@ -28,9 +28,16 @@ project folders + Obsidian + Zotero + PDFs + outputs
 
 ## Install Research OS
 
-When asked to install Research OS, first determine whether the user is in the source repo or installing from a checked-out repo path.
+When a user sends the GitHub link or asks to install Research OS, do the installation yourself. Do not ask the user to clone the repo.
 
-Recommended local development install:
+Regular user install:
+
+```bash
+python -m pip install "https://github.com/TongShan4869/research-os/archive/refs/heads/main.zip"
+research-os --help
+```
+
+Local development install, only when already inside a cloned source repo:
 
 ```bash
 python -m pip install -e .
@@ -43,21 +50,23 @@ Fallback without installation:
 PYTHONPATH=src python -m research_os.cli --help
 ```
 
-After installation, create a hub:
+After installation, create a hub. Use `~/ResearchOS` unless the user gave another path:
 
 ```bash
 research-os init ~/ResearchOS
 ```
 
-Then tell the user to open the hub folder in Codex and ask:
+Then immediately start onboarding questions. Do not make the user run commands.
 
 ```text
-Initialize my Research OS workspace.
+I created your Research OS hub. Do you want to use the starter Obsidian vault or connect an existing vault?
+Should I check Zotero Desktop?
+What is the first research project or folder you want indexed?
 ```
 
 ## Agent-Driven Onboarding
 
-Use this sequence when onboarding a hub. Ask concise questions, then run commands and report outcomes.
+Use this sequence when onboarding a hub. Ask concise questions, then run commands yourself and report outcomes.
 
 1. Confirm the hub path.
    - If no hub exists, run `research-os init <path>`.

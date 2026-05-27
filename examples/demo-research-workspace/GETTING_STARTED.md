@@ -1,12 +1,18 @@
 # Getting Started
 
-If you have the Research OS skill installed in Codex, open this folder and say:
+Open this folder in Codex and say:
+
+```text
+Initialize my Research OS workspace.
+```
+
+If the Research OS skill is installed, you can also say:
 
 ```text
 Use $research-os to onboard this workspace.
 ```
 
-Otherwise, open this folder in Codex and run:
+Slash-command fallback:
 
 ```text
 /research-os:onboard
