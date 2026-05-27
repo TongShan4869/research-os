@@ -58,6 +58,8 @@ def test_ingest_zotero_collection_creates_collection_and_paper_notes(tmp_path: P
     paper_note = vault / "Sources" / "Papers" / "shanSubcorticalResponsesMusic2024.md"
     collection_text = collection_note.read_text(encoding="utf-8")
     paper_text = paper_note.read_text(encoding="utf-8")
+    wiki_log = (vault / "log.md").read_text(encoding="utf-8")
+    wiki_inbox = (vault / "wiki" / "inbox.md").read_text(encoding="utf-8")
     assert "zotero_collection_key: G6CDLFHD" in collection_text
     assert "zotero://select/library/collections/G6CDLFHD" in collection_text
     assert "[[Sources/Papers/shanSubcorticalResponsesMusic2024|" in collection_text
@@ -65,6 +67,10 @@ def test_ingest_zotero_collection_creates_collection_and_paper_notes(tmp_path: P
     assert "zotero_attachment_key: REBSD7ZN" in paper_text
     assert "zotero://select/library/items/GBEMXBSK" in paper_text
     assert "zotero://open-pdf/library/items/REBSD7ZN" in paper_text
+    assert "## [" in wiki_log
+    assert "register-source | paper:shanSubcorticalResponsesMusic2024" in wiki_log
+    assert "- [ ] paper:shanSubcorticalResponsesMusic2024 -> academic-paper" in wiki_inbox
+    assert "PDF/full text requires explicit confirmation" in wiki_inbox
 
     sources = yaml.safe_load((hub / "registries" / "sources.yaml").read_text(encoding="utf-8"))
     assert sources == [
@@ -78,6 +84,7 @@ def test_ingest_zotero_collection_creates_collection_and_paper_notes(tmp_path: P
             "doi": "10.1038/s41598-023-50438-0",
             "projects": ["auditory-demo"],
             "concepts": [],
+            "provider": {"name": "zotero", "key": "GBEMXBSK", "attachment_key": "REBSD7ZN"},
         }
     ]
     graph = json.loads((hub / "graph" / "graph.json").read_text(encoding="utf-8"))
@@ -90,4 +97,27 @@ def test_ingest_zotero_collection_creates_collection_and_paper_notes(tmp_path: P
     assert source_node["metadata"]["citation_key"] == "shanSubcorticalResponsesMusic2024"
     assert source_node["metadata"]["doi"] == "10.1038/s41598-023-50438-0"
     assert source_node["metadata"]["projects"] == ["auditory-demo"]
+    assert source_node["metadata"]["provider"]["name"] == "zotero"
+    assert source_node["metadata"]["provider"]["key"] == "GBEMXBSK"
     assert {"source": "project:auditory-demo", "target": "paper:shanSubcorticalResponsesMusic2024", "type": "uses"} in graph["edges"]
+
+
+def test_repeated_zotero_ingest_does_not_duplicate_wiki_inbox_item(tmp_path: Path, monkeypatch):
+    hub = tmp_path / "ResearchOS"
+    assert main(["init", str(hub)]) == 0
+    assert main(["new-project", "auditory-demo", "--hub", str(hub), "--title", "Auditory Demo"]) == 0
+    monkeypatch.setattr("research_os.cli.ZoteroLocalClient", FakeZoteroClient)
+
+    assert main(["ingest-zotero-collection", "ABR", "--project", "auditory-demo", "--hub", str(hub)]) == 0
+    inbox_path = hub / "obsidian" / "starter-vault" / "wiki" / "inbox.md"
+    inbox_path.write_text(
+        inbox_path.read_text(encoding="utf-8").replace(
+            "PDF/full text requires explicit confirmation",
+            "Needs user-approved paper integration",
+        ),
+        encoding="utf-8",
+    )
+    assert main(["ingest-zotero-collection", "ABR", "--project", "auditory-demo", "--hub", str(hub)]) == 0
+
+    wiki_inbox = inbox_path.read_text(encoding="utf-8")
+    assert wiki_inbox.count("paper:shanSubcorticalResponsesMusic2024 -> academic-paper") == 1

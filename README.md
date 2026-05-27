@@ -18,6 +18,10 @@ Research OS is not trying to replace Zotero, Obsidian, or normal project folders
 - Creates a bootable Research OS hub with registries, workflows, schemas, and an Obsidian starter vault.
 - Tracks project identity in `registries/projects.yaml`.
 - Tracks papers and other sources in `registries/sources.yaml`.
+- Tracks provider-neutral files in `registries/files.yaml` and explicit links in `registries/relations.yaml`.
+- Proposes unconfirmed file assignments in `registries/inbox.yaml` before mutating the confirmed index.
+- Emits agent-ready context packets for projects, sources, tags, and files.
+- Maintains a Karpathy-style LLM wiki core in Obsidian: `index.md`, `log.md`, synthesis pages, entity pages, claims, methods, datasets, and results.
 - Generates an Obsidian `Home.md` project cockpit.
 - Generates `graph/graph.json` for linked project/source context.
 - Generates a static `visual/index.html` explorer for browsing the research graph.
@@ -59,6 +63,31 @@ A paper can be linked by project, concept, tag, and provider metadata:
 
 That lets an agent understand that a paper tagged or linked to `ABR` is relevant when the user asks about the ABR project, even if the PDF lives in Zotero, a folder, or somewhere else.
 
+Local files can also be indexed without pretending they are Zotero papers:
+
+```yaml
+- id: file:auditory-demo:data-raw-csv
+  type: Dataset
+  title: raw.csv
+  path: projects/auditory-demo/data/raw.csv
+  projects:
+    - auditory-demo
+  roles:
+    - dataset
+  provider:
+    name: local_folder
+  review:
+    status: confirmed
+```
+
+Explicit relations connect entities across providers:
+
+```yaml
+- source: file:auditory-demo:data-raw-csv
+  target: project:auditory-demo
+  type: belongs_to_project
+```
+
 ## Repository Layout
 
 ```text
@@ -73,6 +102,8 @@ That lets an agent understand that a paper tagged or linked to `ABR` is relevant
     graph.py                        graph.json generation
     index.py                        Obsidian Home.md generation
     ingest.py                       Zotero collection ingest
+    context.py                      agent context packet generation
+    scan.py                         local file proposal scanning
     paths.py                        shared hub path helpers
     projects.py                     project registry and folder attachment
     validation.py                   hub validation
@@ -146,6 +177,33 @@ research-os build-visual --hub ~/ResearchOS
 
 Open `~/ResearchOS/visual/index.html` in a browser to inspect the generated visual map.
 
+Ask Research OS what context an agent should load:
+
+```bash
+research-os context auditory-demo --hub ~/ResearchOS
+research-os context auditory-demo --hub ~/ResearchOS --json
+```
+
+Scan configured project folders for unindexed files:
+
+```bash
+research-os scan --hub ~/ResearchOS
+research-os scan --hub ~/ResearchOS --apply
+research-os confirm-proposal proposal:projects-auditory-demo-data-raw.csv --hub ~/ResearchOS
+```
+
+`scan` is safe by default. Without `--apply`, it prints proposal counts only. With `--apply`, it writes pending proposals to `registries/inbox.yaml`; it does not confirm files or attach folders to projects. Use `confirm-proposal` to promote exactly one pending proposal into `registries/files.yaml`.
+
+## LLM Wiki Core
+
+The Obsidian vault has three layers:
+
+- raw source notes under `Sources/`
+- machine-readable registries under `registries/`
+- an LLM-maintained wiki core under `index.md`, `log.md`, `Synthesis/`, `Entities/`, `Concepts/`, `Claims/`, `Methods/`, `Datasets/`, and `Results/`
+
+`index.md` is the wiki catalog. `log.md` is an append-only maintenance ledger. `wiki/inbox.md` queues sources for explicit integration. Ingest commands register sources safely and queue integration work; they do not deep-process papers or read PDFs unless the user confirms a Stage 2 workflow.
+
 ## Obsidian
 
 Each hub can point to an existing Obsidian vault or use the starter vault:
@@ -164,9 +222,12 @@ obsidian/starter-vault/Home.md
 `Home.md` summarizes:
 
 - active projects
+- wiki index/log/inbox links
+- pending wiki integration count
 - linked Zotero collections
 - source counts per project
 - recent source notes
+- context readiness, including pending inbox proposals and indexed files
 - items that need attention, such as sources with no linked project or concepts
 
 Open the vault folder in Obsidian to inspect notes and Graph View.
@@ -256,6 +317,9 @@ research-os resolve-project <folder> --hub <path>
 research-os build-index --hub <path>
 research-os build-graph --hub <path>
 research-os build-visual --hub <path>
+research-os context <query> --hub <path> [--json]
+research-os scan --hub <path> [--apply] [--ignore <name>] [--max-files <n>]
+research-os confirm-proposal <proposal-id> --hub <path>
 research-os zotero-status
 research-os ingest-zotero-collection <collection-name-or-key> --project <project-id> --hub <path>
 ```

@@ -31,6 +31,16 @@ def test_validate_reports_missing_required_file(tmp_path: Path, capsys):
     assert "missing required file: AGENTS.md" in capsys.readouterr().out
 
 
+def test_validate_reports_missing_wiki_core(tmp_path: Path, capsys):
+    hub = make_hub(tmp_path)
+    (hub / "obsidian" / "starter-vault" / "index.md").unlink()
+
+    exit_code = main(["validate", "--hub", str(hub)])
+
+    assert exit_code == 1
+    assert "missing required file: obsidian/starter-vault/index.md" in capsys.readouterr().out
+
+
 def test_validate_reports_invalid_project_registry_shape(tmp_path: Path, capsys):
     hub = make_hub(tmp_path)
     (hub / "registries" / "projects.yaml").write_text("id: not-a-list\n", encoding="utf-8")

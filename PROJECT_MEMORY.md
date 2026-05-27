@@ -1,6 +1,6 @@
 # Research OS Project Memory
 
-Last updated: 2026-05-25
+Last updated: 2026-05-27
 
 This file is the durable memory for the Research OS development repo. Future Codex sessions should read it after `AGENTS.md` before planning or implementing changes.
 
@@ -31,6 +31,8 @@ Files and apps remain where they are. Research OS indexes what they mean and how
 - Zotero is optional. It is a metadata provider for citation keys, item keys, PDF links, collections, and bibliographic metadata.
 - Zotero should remain read-only unless the user explicitly asks to mutate Zotero records.
 - The future architecture should evolve from "Zotero ingest" toward "source ingest" with multiple providers.
+- Research OS now has the first provider-neutral control-plane slice: `files.yaml`, `relations.yaml`, `inbox.yaml`, `research-os scan`, and `research-os context`.
+- Research OS now adapts Karpathy's LLM wiki pattern: raw sources remain authoritative, registries are the machine-readable control plane, and Obsidian contains an LLM-maintained wiki core with `index.md`, `log.md`, `wiki/inbox.md`, and synthesis/entity/claim/method/dataset/result pages.
 
 ## Important Conceptual Model
 
@@ -89,6 +91,10 @@ attach-folder
 resolve-project
 build-graph
 build-index
+build-visual
+context
+scan
+confirm-proposal
 zotero-status
 doctor
 ingest-zotero-collection
@@ -102,6 +108,9 @@ Implemented modules:
 - `src/research_os/graph.py`: `graph/graph.json` generation.
 - `src/research_os/index.py`: Obsidian `Home.md` generation.
 - `src/research_os/ingest.py`: Zotero collection ingest into notes and source registry.
+- `src/research_os/context.py`: agent context packet generation for projects, sources, tags, and files.
+- `src/research_os/scan.py`: local project-folder scanner that writes pending inbox proposals only with `--apply`.
+- `src/research_os/wiki.py`: wiki index/log/inbox helpers and wiki page lookup for context packets.
 - `src/research_os/paths.py`: shared hub path helpers.
 - `src/research_os/validation.py`: hub validation.
 - `src/research_os/zotero.py`: Zotero Desktop local API client.
@@ -126,6 +135,9 @@ Important generated/demo files:
 - `examples/demo-research-workspace/graph/graph.json`
 - `examples/demo-research-workspace/registries/projects.yaml`
 - `examples/demo-research-workspace/registries/sources.yaml`
+- `examples/demo-research-workspace/registries/files.yaml`
+- `examples/demo-research-workspace/registries/relations.yaml`
+- `examples/demo-research-workspace/registries/inbox.yaml`
 
 The demo has one active project:
 
@@ -226,11 +238,10 @@ python -m pip wheel . --no-deps --no-build-isolation -w /private/tmp/research-os
 
 Strong next product slice:
 
-1. Generalize from Zotero-specific ingest to source/provider indexing.
-2. Add roles and relations to source/project metadata.
-3. Add a command that indexes local folders or PDFs into `registries/sources.yaml`.
-4. Expand `build-graph` to include tags, concepts, roles, and explicit relations.
-5. Update `Home.md` to show tag/role/project graph slices, especially for contexts like ABR.
+1. Implement the Stage 2 `integrate-source` workflow as a CLI-assisted flow that consumes one `wiki/inbox.md` item.
+2. Teach `scan` user correction memory so repeated classifications improve.
+3. Expand context packets to include note excerpts and graph-neighbor summaries when useful.
+4. Make the visual explorer show pending inbox/wiki integration items as reviewable islands.
 
 Suggested design direction:
 

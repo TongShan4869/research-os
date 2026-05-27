@@ -5,21 +5,47 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from research_os.config import Hub, load_projects, load_sources
+from research_os.config import Hub, load_files, load_inbox, load_projects, load_relations, load_sources
 from research_os.graph import graph_from_registries
 from research_os.paths import obsidian_vault_path
+from research_os.wiki import count_pending_wiki_integrations, folder_guide_markdown_table, wiki_page_count
 
 
 def build_index(hub: Hub) -> Path:
     projects = load_projects(hub)
     sources = load_sources(hub)
+    inbox = load_inbox(hub)
+    files = load_files(hub)
+    relations = load_relations(hub)
     home_path = obsidian_vault_path(hub) / "Home.md"
-    write_text_if_changed(home_path, render_home(projects, sources))
+    write_text_if_changed(
+        home_path,
+        render_home(
+            projects,
+            sources,
+            inbox,
+            files,
+            relations,
+            wiki_pending=count_pending_wiki_integrations(hub),
+            wiki_pages=wiki_page_count(hub),
+        ),
+    )
     return home_path
 
 
-def render_home(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -> str:
-    graph = graph_from_registries(projects, sources)
+def render_home(
+    projects: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+    inbox: list[dict[str, Any]] | None = None,
+    files: list[dict[str, Any]] | None = None,
+    relations: list[dict[str, Any]] | None = None,
+    wiki_pending: int = 0,
+    wiki_pages: int = 0,
+) -> str:
+    inbox = inbox or []
+    files = files or []
+    relations = relations or []
+    graph = graph_from_registries(projects, sources, files, relations)
     lines = [
         "---",
         "type: research_os_home",
@@ -33,6 +59,18 @@ def render_home(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -
         "",
         "- [Open visual explorer](../../visual/index.html)",
         f"- Graph: {len(graph['nodes'])} nodes, {len(graph['edges'])} edges",
+        "",
+        "## LLM Wiki",
+        "",
+        "- [Wiki index](index.md)",
+        "- [Wiki log](log.md)",
+        "- [Integration inbox](wiki/inbox.md)",
+        f"- Pending wiki integrations: {wiki_pending}",
+        f"- Maintained wiki pages: {wiki_pages}",
+        "",
+        "## Folder Guide",
+        "",
+        folder_guide_markdown_table(include_maintainer=True),
         "",
         "## Projects",
         "",
@@ -50,6 +88,12 @@ def render_home(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -
             "## Recent Sources",
             "",
             *source_lines(sources),
+            "",
+            "## Context Readiness",
+            "",
+            f"- Pending inbox proposals: {count_pending_inbox(inbox)}",
+            f"- Confirmed indexed files: {len(files)}",
+            f"- Projects with folders: {count_projects_with_folders(projects)}",
             "",
             "## Needs Attention",
             "",
@@ -152,6 +196,14 @@ def count_sources_without_projects(sources: list[dict[str, Any]]) -> int:
 
 def count_sources_without_concepts(sources: list[dict[str, Any]]) -> int:
     return sum(1 for source in sources if not string_list(source.get("concepts")))
+
+
+def count_pending_inbox(inbox: list[dict[str, Any]]) -> int:
+    return sum(1 for item in inbox if item.get("status", "pending") == "pending")
+
+
+def count_projects_with_folders(projects: list[dict[str, Any]]) -> int:
+    return sum(1 for project in projects if isinstance(project.get("folders"), dict) and bool(project["folders"]))
 
 
 def string_list(value: Any) -> list[str]:

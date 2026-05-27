@@ -9,7 +9,30 @@ tags:
 ## Visual Explorer
 
 - [Open visual explorer](../../visual/index.html)
-- Graph: 11 nodes, 16 edges
+- Graph: 11 nodes, 17 edges
+
+## LLM Wiki
+
+- [Wiki index](index.md)
+- [Wiki log](log.md)
+- [Integration inbox](wiki/inbox.md)
+- Pending wiki integrations: 0
+- Maintained wiki pages: 7
+
+## Folder Guide
+
+| Folder | What goes here | Who maintains it |
+| --- | --- | --- |
+| `Projects/` | One page per research project: goals, scope, linked sources, open questions. | Human plus LLM |
+| `Sources/` | Source notes for papers, Zotero collections, articles, files, and raw-provider links. | LLM after user-approved ingest |
+| `Synthesis/` | Evolving project or topic summaries that combine many sources. Start reading here. | LLM-maintained |
+| `Concepts/` | Stable concept explainer pages, linked from projects, sources, and syntheses. | LLM-maintained |
+| `Entities/` | People, labs, tools, organisms, places, institutions, or other named things. | LLM-maintained |
+| `Claims/` | Atomic evidence-backed claims, especially contested or important ones. | LLM-maintained |
+| `Methods/` | Protocols, analysis methods, measures, models, and workflows. | LLM-maintained |
+| `Datasets/` | Dataset pages with provenance, variables, access paths, and related outputs. | LLM-maintained |
+| `Results/` | Findings, figures, tables, analysis outputs, and interpretation notes. | LLM-maintained |
+| `wiki/inbox.md` | Sources waiting for explicit Stage 2 integration into the wiki. | Human confirms; LLM processes |
 
 ## Projects
 
@@ -30,6 +53,12 @@ tags:
 - [[Sources/Papers/bidelmanMyogenicArtifactsMasquerade2024|Myogenic artifacts masquerade as neuroplasticity in the auditory frequency-following response]]
 - [[Sources/Papers/kulasinghamPredictorsEstimatingSubcortical2024|Predictors for estimating subcortical EEG responses to continuous speech]]
 - [[Sources/Papers/maddoxAuditoryBrainstemResponses2018|Auditory Brainstem Responses to Continuous Natural Speech in Human Listeners]]
+
+## Context Readiness
+
+- Pending inbox proposals: 0
+- Confirmed indexed files: 0
+- Projects with folders: 1
 
 ## Needs Attention
 

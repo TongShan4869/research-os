@@ -3,6 +3,9 @@
   title: Auditory Brainstem Responses In Demo Conditions
   zotero_item_key: ABCD1234
   citation_key: smith2024demo
+  provider:
+    name: zotero
+    key: ABCD1234
   projects:
     - auditory-demo
   concepts:
@@ -13,6 +16,10 @@
   zotero_item_key: GBEMXBSK
   zotero_attachment_key: REBSD7ZN
   citation_key: shanSubcorticalResponsesMusic2024
+  provider:
+    name: zotero
+    key: GBEMXBSK
+    attachment_key: REBSD7ZN
   doi: 10.1038/s41598-023-50438-0
   projects:
     - auditory-demo
@@ -24,6 +31,10 @@
   zotero_item_key: QGUFNG2Y
   zotero_attachment_key: VXILSG99
   citation_key: shanComparingMethodsDeriving2025
+  provider:
+    name: zotero
+    key: QGUFNG2Y
+    attachment_key: VXILSG99
   doi: 10.1162/IMAG.a.19
   projects:
     - auditory-demo
@@ -35,6 +46,10 @@
   zotero_item_key: XHZQBDAK
   zotero_attachment_key: NWC2ZEEG
   citation_key: stollAuditoryBrainstemResponse2025
+  provider:
+    name: zotero
+    key: XHZQBDAK
+    attachment_key: NWC2ZEEG
   doi: 10.1371/journal.pbio.3003407
   projects:
     - auditory-demo
@@ -46,6 +61,10 @@
   zotero_item_key: T85T722R
   zotero_attachment_key: Z5WWLJX3
   citation_key: bidelmanMyogenicArtifactsMasquerade2024
+  provider:
+    name: zotero
+    key: T85T722R
+    attachment_key: Z5WWLJX3
   doi: 10.3389/fnins.2024.1422903
   projects:
     - auditory-demo
@@ -57,6 +76,10 @@
   zotero_item_key: JJ5WST9H
   zotero_attachment_key: 9KBCFZVV
   citation_key: kulasinghamPredictorsEstimatingSubcortical2024
+  provider:
+    name: zotero
+    key: JJ5WST9H
+    attachment_key: 9KBCFZVV
   doi: 10.1371/journal.pone.0297826
   projects:
     - auditory-demo
@@ -68,6 +91,10 @@
   zotero_item_key: PV72J5LR
   zotero_attachment_key: 9H3HK8JL
   citation_key: maddoxAuditoryBrainstemResponses2018
+  provider:
+    name: zotero
+    key: PV72J5LR
+    attachment_key: 9H3HK8JL
   doi: 10.1523/eneuro.0441-17.2018
   projects:
     - auditory-demo

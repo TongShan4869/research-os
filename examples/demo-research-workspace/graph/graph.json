@@ -133,6 +133,10 @@
         "projects": [
           "auditory-demo"
         ],
+        "provider": {
+          "key": "ABCD1234",
+          "name": "zotero"
+        },
         "zotero_item_key": "ABCD1234"
       },
       "title": "Auditory Brainstem Responses In Demo Conditions",
@@ -154,6 +158,11 @@
         "projects": [
           "auditory-demo"
         ],
+        "provider": {
+          "attachment_key": "REBSD7ZN",
+          "key": "GBEMXBSK",
+          "name": "zotero"
+        },
         "zotero_attachment_key": "REBSD7ZN",
         "zotero_item_key": "GBEMXBSK"
       },
@@ -171,6 +180,11 @@
         "projects": [
           "auditory-demo"
         ],
+        "provider": {
+          "attachment_key": "VXILSG99",
+          "key": "QGUFNG2Y",
+          "name": "zotero"
+        },
         "zotero_attachment_key": "VXILSG99",
         "zotero_item_key": "QGUFNG2Y"
       },
@@ -188,6 +202,11 @@
         "projects": [
           "auditory-demo"
         ],
+        "provider": {
+          "attachment_key": "NWC2ZEEG",
+          "key": "XHZQBDAK",
+          "name": "zotero"
+        },
         "zotero_attachment_key": "NWC2ZEEG",
         "zotero_item_key": "XHZQBDAK"
       },
@@ -205,6 +224,11 @@
         "projects": [
           "auditory-demo"
         ],
+        "provider": {
+          "attachment_key": "Z5WWLJX3",
+          "key": "T85T722R",
+          "name": "zotero"
+        },
         "zotero_attachment_key": "Z5WWLJX3",
         "zotero_item_key": "T85T722R"
       },
@@ -222,6 +246,11 @@
         "projects": [
           "auditory-demo"
         ],
+        "provider": {
+          "attachment_key": "9KBCFZVV",
+          "key": "JJ5WST9H",
+          "name": "zotero"
+        },
         "zotero_attachment_key": "9KBCFZVV",
         "zotero_item_key": "JJ5WST9H"
       },
@@ -239,6 +268,11 @@
         "projects": [
           "auditory-demo"
         ],
+        "provider": {
+          "attachment_key": "9H3HK8JL",
+          "key": "PV72J5LR",
+          "name": "zotero"
+        },
         "zotero_attachment_key": "9H3HK8JL",
         "zotero_item_key": "PV72J5LR"
       },

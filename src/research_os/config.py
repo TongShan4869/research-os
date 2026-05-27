@@ -24,6 +24,18 @@ class Hub:
     def sources_path(self) -> Path:
         return self.path / "registries" / "sources.yaml"
 
+    @property
+    def files_path(self) -> Path:
+        return self.path / "registries" / "files.yaml"
+
+    @property
+    def relations_path(self) -> Path:
+        return self.path / "registries" / "relations.yaml"
+
+    @property
+    def inbox_path(self) -> Path:
+        return self.path / "registries" / "inbox.yaml"
+
 
 def load_hub(path: Path) -> Hub:
     hub_path = path.expanduser().resolve()
@@ -60,9 +72,27 @@ def read_yaml_list(path: Path, label: str) -> list[dict[str, Any]]:
     return data
 
 
+def read_optional_yaml_list(path: Path, label: str) -> list[dict[str, Any]]:
+    if not path.is_file():
+        return []
+    return read_yaml_list(path, label)
+
+
 def load_projects(hub: Hub) -> list[dict[str, Any]]:
     return read_yaml_list(hub.projects_path, "registries/projects.yaml")
 
 
 def load_sources(hub: Hub) -> list[dict[str, Any]]:
     return read_yaml_list(hub.sources_path, "registries/sources.yaml")
+
+
+def load_files(hub: Hub) -> list[dict[str, Any]]:
+    return read_optional_yaml_list(hub.files_path, "registries/files.yaml")
+
+
+def load_relations(hub: Hub) -> list[dict[str, Any]]:
+    return read_optional_yaml_list(hub.relations_path, "registries/relations.yaml")
+
+
+def load_inbox(hub: Hub) -> list[dict[str, Any]]:
+    return read_optional_yaml_list(hub.inbox_path, "registries/inbox.yaml")

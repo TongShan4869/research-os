@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from research_os.config import Hub, HubError, load_projects, load_sources
+from research_os.config import Hub, HubError, load_files, load_inbox, load_projects, load_relations, load_sources
 
 
 REQUIRED_FILES = [
@@ -12,6 +12,12 @@ REQUIRED_FILES = [
     "workflows/onboard.md",
     "registries/projects.yaml",
     "registries/sources.yaml",
+    "registries/files.yaml",
+    "registries/relations.yaml",
+    "registries/inbox.yaml",
+    "obsidian/starter-vault/index.md",
+    "obsidian/starter-vault/log.md",
+    "obsidian/starter-vault/wiki/inbox.md",
     "schemas/project.schema.yaml",
     "schemas/graph.schema.yaml",
     "schemas/note-types.yaml",
@@ -24,6 +30,12 @@ REQUIRED_DIRS = [
     "schemas",
     "graph",
     "obsidian/templates",
+    "obsidian/starter-vault/Synthesis",
+    "obsidian/starter-vault/Entities",
+    "obsidian/starter-vault/Claims",
+    "obsidian/starter-vault/Methods",
+    "obsidian/starter-vault/Datasets",
+    "obsidian/starter-vault/Results",
 ]
 
 
@@ -73,5 +85,11 @@ def validate_registries(hub: Hub) -> list[str]:
         load_sources(hub)
     except HubError as error:
         errors.append(str(error))
+
+    for loader in (load_files, load_relations, load_inbox):
+        try:
+            loader(hub)
+        except HubError as error:
+            errors.append(str(error))
 
     return errors

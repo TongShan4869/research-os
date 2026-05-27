@@ -130,6 +130,48 @@ def test_build_graph_emits_research_context_nodes_and_edges(tmp_path: Path):
     } in graph["edges"]
 
 
+def test_build_graph_includes_provider_neutral_files_and_relations(tmp_path: Path):
+    hub = tmp_path / "ResearchOS"
+    assert main(["init", str(hub)]) == 0
+    projects = [{"id": "auditory-demo", "title": "Auditory Demo"}]
+    files = [
+        {
+            "id": "file:auditory-demo:data-raw-csv",
+            "type": "Dataset",
+            "title": "raw.csv",
+            "path": "projects/auditory-demo/data/raw.csv",
+            "projects": ["auditory-demo"],
+            "roles": ["dataset"],
+            "provider": {"name": "local_folder"},
+            "review": {"status": "confirmed"},
+        }
+    ]
+    relations = [
+        {
+            "source": "file:auditory-demo:data-raw-csv",
+            "target": "project:auditory-demo",
+            "type": "belongs_to_project",
+        }
+    ]
+    (hub / "registries" / "projects.yaml").write_text(yaml.safe_dump(projects, sort_keys=False), encoding="utf-8")
+    (hub / "registries" / "files.yaml").write_text(yaml.safe_dump(files, sort_keys=False), encoding="utf-8")
+    (hub / "registries" / "relations.yaml").write_text(yaml.safe_dump(relations, sort_keys=False), encoding="utf-8")
+
+    assert main(["build-graph", "--hub", str(hub)]) == 0
+
+    graph = json.loads((hub / "graph" / "graph.json").read_text(encoding="utf-8"))
+    nodes_by_id = {node["id"]: node for node in graph["nodes"]}
+    assert nodes_by_id["file:auditory-demo:data-raw-csv"]["type"] == "Dataset"
+    assert nodes_by_id["file:auditory-demo:data-raw-csv"]["metadata"]["roles"] == ["dataset"]
+    assert nodes_by_id["file:auditory-demo:data-raw-csv"]["metadata"]["provider"]["name"] == "local_folder"
+    assert nodes_by_id["file:auditory-demo:data-raw-csv"]["metadata"]["review"]["status"] == "confirmed"
+    assert {
+        "source": "file:auditory-demo:data-raw-csv",
+        "target": "project:auditory-demo",
+        "type": "belongs_to_project",
+    } in graph["edges"]
+
+
 def test_build_graph_ignores_blank_explicit_fields_and_deduplicates_edges(tmp_path: Path):
     hub = tmp_path / "ResearchOS"
     assert main(["init", str(hub)]) == 0

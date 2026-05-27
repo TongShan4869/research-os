@@ -11,6 +11,7 @@ from research_os.config import Hub, HubError, load_projects, load_sources
 from research_os.graph import build_graph, write_graph
 from research_os.paths import obsidian_vault_path
 from research_os.projects import find_project
+from research_os.wiki import append_wiki_log, queue_wiki_integration
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,18 @@ def ingest_zotero_collection(hub: Hub, collection_ref: str, project_id: str, zot
         paper_links.append(f"- [[Sources/Papers/{citation_key}|{title}]]")
         paper_note_path = vault / "Sources" / "Papers" / f"{citation_key}.md"
         write_text_if_changed(paper_note_path, render_paper_note(entry, collection_name))
+        queue_wiki_integration(
+            hub,
+            entry["id"],
+            "academic-paper",
+            "PDF/full text requires explicit confirmation",
+        )
+        append_wiki_log(
+            hub,
+            "register-source",
+            entry["id"],
+            f"Registered Zotero paper stub for {entry['title']}. Full paper integration remains queued.",
+        )
 
     write_text_if_changed(
         collection_note_path,
@@ -90,10 +103,12 @@ def source_entry_from_zotero_item(item: dict[str, Any], project_id: str) -> dict
         "citation_key": citation_key,
         "projects": [project_id],
         "concepts": [],
+        "provider": {"name": "zotero", "key": item_key},
     }
     attachment_key = pdf_attachment_key(item)
     if attachment_key is not None:
         entry["zotero_attachment_key"] = attachment_key
+        entry["provider"]["attachment_key"] = attachment_key
     doi = data.get("DOI")
     if isinstance(doi, str) and doi:
         entry["doi"] = doi

@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from research_os.config import Hub, load_projects, load_sources
+from research_os.config import Hub, load_files, load_projects, load_relations, load_sources
 
 Graph = dict[str, list[dict[str, Any]]]
 
@@ -13,14 +13,23 @@ Graph = dict[str, list[dict[str, Any]]]
 def build_graph(hub: Hub) -> Graph:
     projects = load_projects(hub)
     sources = load_sources(hub)
-    return graph_from_registries(projects, sources)
+    files = load_files(hub)
+    relations = load_relations(hub)
+    return graph_from_registries(projects, sources, files, relations)
 
 
-def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str, Any]]) -> Graph:
+def graph_from_registries(
+    projects: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+    files: list[dict[str, Any]] | None = None,
+    relations: list[dict[str, Any]] | None = None,
+) -> Graph:
     nodes: list[dict[str, Any]] = []
     nodes_by_id: dict[str, dict[str, Any]] = {}
     edges: list[dict[str, Any]] = []
     known_collection_keys = collection_keys_by_name(projects)
+    files = files or []
+    relations = relations or []
 
     for project in projects:
         project_id = string_value(project.get("id"))
@@ -118,6 +127,7 @@ def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str
                         "projects": projects_for_source,
                         "concepts": concepts,
                         "zotero_collections": collections,
+                        "provider": mapping_value(source.get("provider")),
                     }
                 ),
             },
@@ -147,6 +157,49 @@ def graph_from_registries(projects: list[dict[str, Any]], sources: list[dict[str
                 },
             )
             edges.append(edge(source_id, collection_id, "in_collection"))
+
+    for file_entry in files:
+        file_id = string_value(file_entry.get("id"))
+        title = file_entry.get("title")
+        if file_id is None or not isinstance(title, str):
+            continue
+        file_type = string_value(file_entry.get("type")) or "File"
+        projects_for_file = string_list(file_entry.get("projects"))
+        concepts = string_list(file_entry.get("concepts"))
+        add_node(
+            nodes,
+            nodes_by_id,
+            {
+                "id": file_id,
+                "type": file_type,
+                "title": title,
+                "metadata": clean_metadata(
+                    {
+                        "path": string_value(file_entry.get("path")),
+                        "roles": string_list(file_entry.get("roles")),
+                        "projects": projects_for_file,
+                        "concepts": concepts,
+                        "provider": mapping_value(file_entry.get("provider")),
+                        "review": mapping_value(file_entry.get("review")),
+                    }
+                ),
+            },
+        )
+
+        for project_id in projects_for_file:
+            edges.append(edge(f"project:{project_id}", file_id, "uses"))
+        for concept in concepts:
+            concept_id = concept_node_id(concept)
+            add_node(nodes, nodes_by_id, {"id": concept_id, "type": "Concept", "title": concept_title(concept)})
+            edges.append(edge(file_id, concept_id, "has_concept"))
+
+    for relation in relations:
+        source = string_value(relation.get("source"))
+        target = string_value(relation.get("target"))
+        relation_type = string_value(relation.get("type"))
+        if source is None or target is None or relation_type is None:
+            continue
+        edges.append(edge(source, target, relation_type))
 
     return {"nodes": nodes, "edges": dedupe_edges(edges)}
 
@@ -195,6 +248,12 @@ def clean_metadata(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         return {}
     return {key: item for key, item in value.items() if item not in (None, [], {})}
+
+
+def mapping_value(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    return clean_metadata(value)
 
 
 def folder_items(value: Any) -> list[tuple[str, str]]:

@@ -5,11 +5,13 @@ import shutil
 import sys
 from pathlib import Path
 
+from research_os.context import build_context_packet, render_context_json, render_context_markdown
 from research_os.config import HubError, load_hub, load_projects, load_sources
 from research_os.graph import build_graph, read_graph, write_graph
 from research_os.index import build_index
 from research_os.ingest import ingest_zotero_collection
 from research_os.projects import attach_folder, create_project, load_optional_hub, resolve_project
+from research_os.scan import apply_scan, confirm_proposal, scan_hub
 from research_os.validation import validate_hub
 from research_os.visual import write_visual
 from research_os.zotero import ZoteroLocalClient, check_zotero
@@ -70,6 +72,24 @@ def build_parser() -> argparse.ArgumentParser:
     build_visual_parser = subparsers.add_parser("build-visual", help="Build visual/index.html from Research OS graph data.")
     add_hub_argument(build_visual_parser)
     build_visual_parser.set_defaults(handler=run_build_visual)
+
+    context_parser = subparsers.add_parser("context", help="Build an agent context packet for a project, source, tag, or file.")
+    context_parser.add_argument("query")
+    context_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON instead of markdown.")
+    add_hub_argument(context_parser)
+    context_parser.set_defaults(handler=run_context)
+
+    scan_parser = subparsers.add_parser("scan", help="Propose file index assignments for configured project folders.")
+    scan_parser.add_argument("--apply", action="store_true", help="Write pending proposals to registries/inbox.yaml.")
+    scan_parser.add_argument("--ignore", action="append", default=[], help="Folder or file name to skip during scan. Repeatable.")
+    scan_parser.add_argument("--max-files", type=int, default=None, help="Stop scanning after this many non-ignored files.")
+    add_hub_argument(scan_parser)
+    scan_parser.set_defaults(handler=run_scan)
+
+    confirm_parser = subparsers.add_parser("confirm-proposal", help="Promote one pending scan proposal into registries/files.yaml.")
+    confirm_parser.add_argument("proposal_id")
+    add_hub_argument(confirm_parser)
+    confirm_parser.set_defaults(handler=run_confirm_proposal)
 
     zotero_parser = subparsers.add_parser("zotero-status", help="Check Zotero Desktop local API availability.")
     zotero_parser.set_defaults(handler=run_zotero_status)
@@ -233,6 +253,51 @@ def run_build_visual(args: argparse.Namespace) -> int:
     print(f"wrote visual explorer: {visual_path}")
     print(f"nodes: {len(graph['nodes'])}")
     print(f"edges: {len(graph['edges'])}")
+    return 0
+
+
+def run_context(args: argparse.Namespace) -> int:
+    try:
+        hub = load_hub(args.hub)
+        packet = build_context_packet(hub, args.query)
+    except HubError as error:
+        print(error)
+        return 1
+    if args.json:
+        print(render_context_json(packet), end="")
+    else:
+        print(render_context_markdown(packet))
+    return 0
+
+
+def run_scan(args: argparse.Namespace) -> int:
+    try:
+        hub = load_hub(args.hub)
+        status: dict[str, object] = {}
+        proposals = scan_hub(hub, ignore_names=args.ignore, max_files=args.max_files, status=status)
+        inbox_path = apply_scan(hub, proposals) if args.apply else None
+    except HubError as error:
+        print(error)
+        return 1
+    print(f"proposals: {len(proposals)}")
+    if status.get("stopped_early"):
+        print(f"scan stopped early after reaching max files: {status.get('max_files')}")
+    if inbox_path is not None:
+        print(f"wrote inbox: {inbox_path}")
+    else:
+        print("dry run: no registries changed")
+    return 0
+
+
+def run_confirm_proposal(args: argparse.Namespace) -> int:
+    try:
+        hub = load_hub(args.hub)
+        file_entry = confirm_proposal(hub, args.proposal_id)
+    except HubError as error:
+        print(error)
+        return 1
+    print(f"confirmed proposal: {args.proposal_id}")
+    print(f"file: {file_entry['id']}")
     return 0
 
 
