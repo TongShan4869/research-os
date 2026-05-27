@@ -1,0 +1,8 @@
+interface:
+  display_name: "Research OS"
+  short_description: "Install and onboard indexed research workspaces"
+  brand_color: "#2563EB"
+  default_prompt: "Use $research-os to install Research OS and guide me through onboarding my research workspace."
+
+policy:
+  allow_implicit_invocation: true

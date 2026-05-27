@@ -19,7 +19,7 @@ research-os = "research_os.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-research_os = ["template/**/*", "visual_template.html"]
+research_os = ["template/**/*", "skills/**/*", "visual_template.html"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

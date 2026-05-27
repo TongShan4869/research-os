@@ -131,6 +131,32 @@ Without installing, run commands from the repo with:
 PYTHONPATH=src python -m research_os.cli --help
 ```
 
+## Codex Skill
+
+This repo includes an installable Codex skill that turns Codex into a Research OS onboarding guide:
+
+```text
+src/research_os/skills/research-os
+```
+
+Use it when you want an agent to install Research OS, create or inspect a hub, connect Obsidian/Zotero/project folders, and walk a user through the safe indexing workflow.
+
+After installing the skill in Codex, ask:
+
+```text
+Use $research-os to install Research OS and guide me through onboarding my research workspace.
+```
+
+The skill teaches the agent to:
+
+- install the CLI with `python -m pip install -e .` or use the `PYTHONPATH=src` fallback
+- create or open a hub with `research-os init`
+- check `research-os.yaml`, validate the hub, and run doctor checks
+- ask before using Zotero, reading PDFs, attaching folders, or confirming scan proposals
+- register projects, attach confirmed folders, ingest Zotero collections, and scan local files
+- build the generated user surfaces: `Home.md`, `graph/graph.json`, and `visual/index.html`
+- explain the Research OS loop from registries to Obsidian, visual graph, and agent context
+
 ## Quickstart
 
 Create a hub:
