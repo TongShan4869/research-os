@@ -268,7 +268,7 @@ function boardEdge(source, target, label, options = {}) {
     id: makeEdgeId(source, target, label),
     source,
     target,
-    type: "smoothstep",
+    type: "default",
     animated: Boolean(options.animated),
     label,
     labelBgPadding: [8, 4],
