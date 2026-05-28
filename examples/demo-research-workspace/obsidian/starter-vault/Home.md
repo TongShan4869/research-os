@@ -1,6 +1,6 @@
 ---
 type: research_os_home
-research_os_fingerprint: c256b551fa0963d4
+research_os_fingerprint: 3b26d612f5135fcc
 research_os_fingerprint_version: 1
 tags:
   - research-os/home
@@ -58,7 +58,7 @@ tags:
 
 ## Context Readiness
 
-- Home context fingerprint: `c256b551fa0963d4`
+- Home context fingerprint: `3b26d612f5135fcc`
 - Pending inbox proposals: 0
 - Confirmed indexed files: 0
 - Projects with folders: 1

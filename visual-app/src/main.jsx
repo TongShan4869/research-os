@@ -93,6 +93,10 @@ function nodeTitle(node) {
   return node?.title || node?.id || "Untitled";
 }
 
+function nodeDescription(node, fallback = "Indexed item in the research graph.") {
+  return node?.description || fallback;
+}
+
 function plural(count, singular, pluralText) {
   return `${count} ${count === 1 ? singular : pluralText || `${singular}s`}`;
 }
@@ -341,7 +345,7 @@ function buildBoard(graph, state) {
       title: nodeTitle(project),
       eyebrow: "Project",
       status: project.metadata?.status || "active",
-      description: `${plural(paperCount, "paper")} and ${plural(conceptCount, "concept")} linked to this research context.`,
+      description: nodeDescription(project),
       color: TYPE_THEME.Project.color,
       expanded: state.expanded.has(id),
     }));
@@ -368,7 +372,7 @@ function buildBoard(graph, state) {
         title: nodeTitle(group.collection),
         eyebrow: "Collection",
         status: plural(group.papers.length, "paper"),
-        description: group.papers.slice(0, 2).map(nodeTitle).join(", "),
+        description: nodeDescription(group.collection),
         color: TYPE_THEME.Collection.color,
         expanded: itemExpanded,
         expandable: true,
@@ -411,7 +415,7 @@ function buildBoard(graph, state) {
         title: nodeTitle(cluster.concept),
         eyebrow: "Concept",
         status: plural(cluster.projects.length, "project"),
-        description: cluster.papers.slice(0, 2).map(nodeTitle).join(", ") || "Shared wiki concept in the generated graph.",
+        description: nodeDescription(cluster.concept),
         color: TYPE_THEME.Concept.color,
       }));
       edges.push(boardEdge(BLOCKS.wiki.id, itemId, cluster.projects.length ? String(cluster.projects.length) : "", { color: TYPE_THEME.Concept.color }));
@@ -437,6 +441,7 @@ function buildBoard(graph, state) {
         node: contextNode,
         title: nodeTitle(contextNode),
         eyebrow: nodeType(contextNode),
+        description: nodeDescription(contextNode),
         color: theme.color,
       }));
       edges.push(boardEdge(BLOCKS.context.id, contextId, "", { color: theme.color }));
@@ -502,7 +507,7 @@ const BoardNode = memo(function BoardNode({ id, data, selected }) {
         </div>
         <div className="node-title">{truncate(data.title, variant === "pill" ? 32 : 52)}</div>
         {variant !== "pill" && (
-          <div className="node-description">{truncate(data.description || data.count || data.node?.id, 118)}</div>
+          <div className="node-description">{truncate(data.description || nodeDescription(data.node), 118)}</div>
         )}
         {variant !== "pill" && (
           <div className="node-footer">
@@ -574,7 +579,7 @@ function Inspector({ selected, graph, counts, onToggleExpanded, onFocus, focusId
     <aside className="inspector">
       <p className="inspector-eyebrow">{data.eyebrow || nodeType(sourceNode)}</p>
       <h2>{data.title || nodeTitle(sourceNode)}</h2>
-      <p>{data.description || sourceNode?.id || selected.id}</p>
+      <p className="inspector-description">{data.description || nodeDescription(sourceNode, sourceNode?.id || selected.id)}</p>
       <div className="inspector-actions">
         {canExpand ? <button type="button" onClick={() => onToggleExpanded(selected.id)}>{expandAction}</button> : null}
         <button type="button" onClick={() => onFocus(selected.id)}>{focusId === selected.id ? "Clear Focus" : "Focus"}</button>
@@ -586,6 +591,15 @@ function Inspector({ selected, graph, counts, onToggleExpanded, onFocus, focusId
           <dd>{data.eyebrow || nodeType(sourceNode)}</dd>
           <dt>ID</dt>
           <dd><code>{realId}</code></dd>
+          {sourceNode?.metadata?.description_source?.path ? (
+            <>
+              <dt>Description</dt>
+              <dd>
+                {sourceNode.metadata.description_source.path}
+                {sourceNode.metadata.description_source.section ? ` / ${sourceNode.metadata.description_source.section}` : ""}
+              </dd>
+            </>
+          ) : null}
           {sourceNode?.metadata?.roles?.length ? (
             <>
               <dt>Roles</dt>
@@ -630,14 +644,18 @@ function App() {
   const [selectedId, setSelectedId] = useState(null);
   const [focusId, setFocusId] = useState(null);
   const [nodes, setNodes] = useState([]);
+  const [positionOverrides, setPositionOverrides] = useState(() => new Map());
   const [fitSignal, setFitSignal] = useState(0);
 
   const boardState = useMemo(() => ({ search, expanded, activeTypes, focusId }), [search, expanded, activeTypes, focusId]);
   const board = useMemo(() => buildBoard(graph, boardState), [graph, boardState]);
 
   useEffect(() => {
-    setNodes(board.nodes);
-  }, [board.nodes]);
+    setNodes(board.nodes.map((node) => ({
+      ...node,
+      position: positionOverrides.get(node.id) || node.position,
+    })));
+  }, [board.nodes, positionOverrides]);
 
   useEffect(() => {
     if (theme === "system") document.documentElement.removeAttribute("data-theme");
@@ -688,6 +706,14 @@ function App() {
     setNodes((currentNodes) => applyNodeChanges(changes, currentNodes));
   }, []);
 
+  const handleNodeDragStop = useCallback((event, node) => {
+    setPositionOverrides((current) => {
+      const next = new Map(current);
+      next.set(node.id, node.position);
+      return next;
+    });
+  }, []);
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -734,6 +760,7 @@ function App() {
               edges={board.edges}
               nodeTypes={{ board: BoardNode }}
               onNodesChange={handleNodesChange}
+              onNodeDragStop={handleNodeDragStop}
               onNodeClick={handleNodeClick}
               onPaneClick={() => setSelectedId(null)}
               fitView

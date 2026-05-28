@@ -499,6 +499,14 @@ code {
   line-height: 1.45;
 }
 
+.inspector-description {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--paper-soft) 72%, transparent);
+  margin: 14px 0 0;
+  padding: 11px 12px;
+}
+
 .inspector-actions {
   display: flex;
   gap: 8px;

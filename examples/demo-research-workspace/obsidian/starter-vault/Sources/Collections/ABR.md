@@ -15,6 +15,10 @@ tags:
 
 [Open collection in Zotero](zotero://select/library/collections/G6CDLFHD)
 
+## Summary
+
+ABR collection groups auditory brainstem response papers linked to the auditory demo project.
+
 ## Papers
 
 - [[Sources/Papers/shanSubcorticalResponsesMusic2024|Subcortical responses to music and speech are alike while cortical responses diverge]]
