@@ -61,7 +61,7 @@ def test_ingest_zotero_collection_creates_collection_and_paper_notes(tmp_path: P
     exit_code = main(["ingest-zotero-collection", "ABR", "--project", "auditory-demo", "--hub", str(hub)])
 
     assert exit_code == 0
-    vault = hub / "obsidian" / "starter-vault"
+    vault = hub / "obsidian" / "research-os"
     collection_note = vault / "Sources" / "Collections" / "ABR.md"
     paper_note = vault / "Sources" / "Papers" / "shanSubcorticalResponsesMusic2024.md"
     collection_text = collection_note.read_text(encoding="utf-8")
@@ -135,7 +135,7 @@ def test_repeated_zotero_ingest_does_not_duplicate_wiki_inbox_item(tmp_path: Pat
     monkeypatch.setattr("research_os.cli.ZoteroLocalClient", FakeZoteroClient)
 
     assert main(["ingest-zotero-collection", "ABR", "--project", "auditory-demo", "--hub", str(hub)]) == 0
-    inbox_path = hub / "obsidian" / "starter-vault" / "wiki" / "inbox.md"
+    inbox_path = hub / "obsidian" / "research-os" / "wiki" / "inbox.md"
     inbox_path.write_text(
         inbox_path.read_text(encoding="utf-8").replace(
             "PDF/full text requires explicit confirmation",
@@ -147,3 +147,26 @@ def test_repeated_zotero_ingest_does_not_duplicate_wiki_inbox_item(tmp_path: Pat
 
     wiki_inbox = inbox_path.read_text(encoding="utf-8")
     assert wiki_inbox.count("paper:shanSubcorticalResponsesMusic2024 -> academic-paper") == 1
+
+
+def test_zotero_ingest_evolves_concept_wiki_pages(tmp_path: Path, monkeypatch):
+    hub = tmp_path / "ResearchOS"
+    assert main(["init", str(hub)]) == 0
+    assert main(["new-project", "auditory-demo", "--hub", str(hub), "--title", "Auditory Demo"]) == 0
+    monkeypatch.setattr("research_os.cli.ZoteroLocalClient", FakeZoteroClient)
+
+    assert main(["ingest-zotero-collection", "ABR", "--project", "auditory-demo", "--hub", str(hub)]) == 0
+    assert main(["ingest-zotero-collection", "ABR", "--project", "auditory-demo", "--hub", str(hub)]) == 0
+
+    vault = hub / "obsidian" / "research-os"
+    concept_note = (vault / "Concepts" / "auditory-brainstem-response.md").read_text(encoding="utf-8")
+    wiki_index = (vault / "index.md").read_text(encoding="utf-8")
+
+    paper_link = "[[Sources/Papers/shanSubcorticalResponsesMusic2024|Subcortical responses to music and speech are alike while cortical responses diverge]]"
+    assert "## Indexed Sources" in concept_note
+    assert paper_link in concept_note
+    assert "evidence: abstract, tags" in concept_note
+    assert "project: auditory-demo" in concept_note
+    assert concept_note.count(paper_link) == 1
+    assert "- [[Concepts/auditory-brainstem-response|auditory brainstem response]] - Concept discovered from indexed sources." in wiki_index
+    assert "- [[Concepts/continuous-speech|continuous speech]] - Concept discovered from indexed sources." in wiki_index

@@ -17,7 +17,7 @@ def test_integrate_source_marks_wiki_inbox_item_complete_and_logs(tmp_path: Path
         "concepts": ["auditory-brainstem-response"],
     }
     (hub / "registries" / "sources.yaml").write_text(yaml.safe_dump([source], sort_keys=False), encoding="utf-8")
-    inbox_path = hub / "obsidian" / "starter-vault" / "wiki" / "inbox.md"
+    inbox_path = hub / "obsidian" / "research-os" / "wiki" / "inbox.md"
     inbox_path.write_text(
         "# Wiki Integration Inbox\n\n- [ ] paper:smith-2024 -> academic-paper (queued after Zotero ingest)\n",
         encoding="utf-8",
@@ -31,7 +31,7 @@ def test_integrate_source_marks_wiki_inbox_item_complete_and_logs(tmp_path: Path
     assert "- [x] paper:smith-2024 -> academic-paper (queued after Zotero ingest)" in inbox_path.read_text(
         encoding="utf-8"
     )
-    log_text = (hub / "obsidian" / "starter-vault" / "log.md").read_text(encoding="utf-8")
+    log_text = (hub / "obsidian" / "research-os" / "log.md").read_text(encoding="utf-8")
     assert "Integrated source | Auditory Brainstem Responses" in log_text
     assert "paper:smith-2024" in log_text
 

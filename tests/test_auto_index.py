@@ -149,3 +149,42 @@ def test_scan_respects_max_files_and_ignore_names(tmp_path: Path, capsys):
     output = capsys.readouterr().out
     assert "proposals: 1" in output
     assert "scan stopped early after reaching max files: 1" in output
+
+
+def test_index_folders_creates_summarized_context_surfaces(tmp_path: Path, capsys):
+    hub = tmp_path / "ResearchOS"
+    assert main(["init", str(hub)]) == 0
+    project_root = hub / "projects" / "auditory-demo"
+    data_dir = project_root / "data" / "raw"
+    scripts_dir = project_root / "analysis"
+    data_dir.mkdir(parents=True)
+    scripts_dir.mkdir(parents=True)
+    (data_dir / "participants.csv").write_text("id,score\n1,2\n", encoding="utf-8")
+    (scripts_dir / "fit_trf.py").write_text("print('fit')\n", encoding="utf-8")
+    assert main(["new-project", "auditory-demo", "--title", "Auditory Demo", "--hub", str(hub)]) == 0
+    projects = yaml.safe_load((hub / "registries" / "projects.yaml").read_text(encoding="utf-8"))
+    projects[0]["folders"] = {"workspace": "projects/auditory-demo"}
+    (hub / "registries" / "projects.yaml").write_text(yaml.safe_dump(projects, sort_keys=False), encoding="utf-8")
+
+    assert main(["index-folders", "--hub", str(hub), "--max-depth", "2"]) == 0
+    assert main(["index-folders", "--hub", str(hub), "--max-depth", "2"]) == 0
+
+    output = capsys.readouterr().out
+    assert "folder surfaces: 3" in output
+    files = yaml.safe_load((hub / "registries" / "files.yaml").read_text(encoding="utf-8"))
+    surface_ids = [entry["id"] for entry in files]
+    assert surface_ids == [
+        "folder-surface:auditory-demo:workspace:analysis",
+        "folder-surface:auditory-demo:workspace:data",
+        "folder-surface:auditory-demo:workspace:data-raw",
+    ]
+    data_entry = files[1]
+    assert data_entry["type"] == "Folder"
+    assert data_entry["title"] == "data"
+    assert data_entry["path"] == "projects/auditory-demo/data"
+    assert data_entry["projects"] == ["auditory-demo"]
+    assert data_entry["roles"] == ["workspace_section"]
+    assert data_entry["provider"] == {"name": "local_folder", "root_kind": "workspace"}
+    assert "1 subfolder" in data_entry["summary"]
+    assert "notable children: raw" in data_entry["summary"]
+    assert files[2]["summary"] == "Folder with 1 file; includes tabular data; notable children: participants.csv."

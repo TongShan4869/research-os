@@ -27,7 +27,6 @@ GRAPH_INPUTS = [
 HOME_INPUTS = [
     *GRAPH_INPUTS,
     "registries/inbox.yaml",
-    "obsidian/starter-vault/wiki/inbox.md",
 ]
 
 

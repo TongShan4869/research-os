@@ -15,7 +15,7 @@ def test_generated_surfaces_store_fingerprints(tmp_path: Path, capsys):
     assert main(["build-visual", "--hub", str(hub)]) == 0
     capsys.readouterr()
 
-    home = (hub / "obsidian" / "starter-vault" / "Home.md").read_text(encoding="utf-8")
+    home = (hub / "obsidian" / "research-os" / "Home.md").read_text(encoding="utf-8")
     graph = json.loads((hub / "graph" / "graph.json").read_text(encoding="utf-8"))
     visual = (hub / "visual" / "index.html").read_text(encoding="utf-8")
 

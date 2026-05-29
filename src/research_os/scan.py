@@ -10,6 +10,34 @@ from research_os.config import Hub, HubError, load_files, load_inbox, load_proje
 
 
 IGNORED_DIRS = {".git", ".obsidian", "__pycache__", ".pytest_cache", "visual"}
+EXTENSION_LABELS = {
+    ".csv": "tabular data",
+    ".tsv": "tabular data",
+    ".xlsx": "spreadsheets",
+    ".json": "JSON data",
+    ".mat": "MATLAB data",
+    ".set": "EEG datasets",
+    ".fdt": "EEG binary data",
+    ".vhdr": "BrainVision EEG headers",
+    ".eeg": "EEG data",
+    ".wav": "audio stimuli",
+    ".mp3": "audio stimuli",
+    ".png": "figures",
+    ".jpg": "figures",
+    ".jpeg": "figures",
+    ".svg": "figures",
+    ".tif": "figures",
+    ".tiff": "figures",
+    ".py": "Python code",
+    ".r": "R code",
+    ".m": "MATLAB code",
+    ".ipynb": "notebooks",
+    ".md": "notes",
+    ".txt": "text notes",
+    ".pdf": "PDF documents",
+    ".docx": "manuscripts",
+    ".tex": "LaTeX manuscripts",
+}
 
 
 def scan_hub(
@@ -61,6 +89,118 @@ def apply_scan(hub: Hub, proposals: list[dict[str, Any]]) -> Path:
             inbox.append(proposal)
     hub.inbox_path.write_text(yaml.safe_dump(inbox, sort_keys=False), encoding="utf-8")
     return hub.inbox_path
+
+
+def index_folder_surfaces(
+    hub: Hub,
+    max_depth: int = 2,
+    ignore_names: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    ignored = IGNORED_DIRS | {name for name in (ignore_names or []) if name}
+    files = load_files(hub)
+    by_id = {file_entry.get("id"): index for index, file_entry in enumerate(files)}
+    surfaces: list[dict[str, Any]] = []
+    for project in load_projects(hub):
+        project_id = string_value(project.get("id"))
+        folders = project.get("folders")
+        if project_id is None or not isinstance(folders, dict):
+            continue
+        for root_kind, folder_value in sorted(folders.items()):
+            if not isinstance(root_kind, str) or not isinstance(folder_value, str) or not folder_value.strip():
+                continue
+            root = resolve_hub_path(hub, folder_value)
+            if not root.is_dir():
+                continue
+            for folder in iter_surface_folders(root, ignored, max_depth):
+                entry = folder_surface_entry(hub, project_id, root_kind, root, folder, ignored)
+                surfaces.append(entry)
+                existing_index = by_id.get(entry["id"])
+                if existing_index is None:
+                    by_id[entry["id"]] = len(files)
+                    files.append(entry)
+                else:
+                    files[existing_index] = merge_folder_surface(files[existing_index], entry)
+    hub.files_path.write_text(yaml.safe_dump(files, sort_keys=False), encoding="utf-8")
+    return surfaces
+
+
+def iter_surface_folders(root: Path, ignored: set[str], max_depth: int) -> list[Path]:
+    folders: list[Path] = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_dir() or should_skip_directory(path, ignored):
+            continue
+        depth = len(path.relative_to(root).parts)
+        if depth <= 0 or depth > max_depth:
+            continue
+        folders.append(path)
+    return folders
+
+
+def folder_surface_entry(
+    hub: Hub,
+    project_id: str,
+    root_kind: str,
+    root: Path,
+    folder: Path,
+    ignored: set[str],
+) -> dict[str, Any]:
+    relative_to_root = folder.relative_to(root).as_posix()
+    path = folder.relative_to(hub.path).as_posix() if folder.is_relative_to(hub.path) else str(folder)
+    return {
+        "id": f"folder-surface:{safe_id(project_id)}:{safe_id(root_kind)}:{safe_id(relative_to_root)}",
+        "type": "Folder",
+        "title": folder.name,
+        "path": path,
+        "projects": [project_id],
+        "roles": ["workspace_section"],
+        "summary": summarize_folder(folder, ignored),
+        "provider": {"name": "local_folder", "root_kind": root_kind},
+        "review": {"status": "auto_indexed", "scope": "folder_surface"},
+    }
+
+
+def merge_folder_surface(existing: dict[str, Any], new_entry: dict[str, Any]) -> dict[str, Any]:
+    preserved = {key: value for key, value in existing.items() if key not in {"summary", "provider", "review"}}
+    merged = {**new_entry, **preserved}
+    merged["summary"] = new_entry["summary"]
+    merged["provider"] = new_entry["provider"]
+    merged["review"] = new_entry["review"]
+    return merged
+
+
+def summarize_folder(folder: Path, ignored: set[str]) -> str:
+    children = sorted([child for child in folder.iterdir() if not should_skip_directory(child, ignored)], key=lambda item: item.name)
+    file_count = sum(1 for child in children if child.is_file())
+    folder_count = sum(1 for child in children if child.is_dir())
+    labels = labels_for_children(children)
+    notable = ", ".join(child.name for child in children[:5])
+    parts = [f"Folder with {count_phrase(file_count, 'file')}"]
+    if folder_count:
+        parts.append(count_phrase(folder_count, "subfolder"))
+    if labels:
+        parts.append(f"includes {', '.join(labels)}")
+    if notable:
+        parts.append(f"notable children: {notable}")
+    return "; ".join(parts) + "."
+
+
+def labels_for_children(children: list[Path]) -> list[str]:
+    labels: list[str] = []
+    for child in children:
+        if not child.is_file():
+            continue
+        label = EXTENSION_LABELS.get(child.suffix.casefold())
+        if label is not None and label not in labels:
+            labels.append(label)
+    return labels[:4]
+
+
+def count_phrase(count: int, noun: str) -> str:
+    return f"{count} {noun if count == 1 else noun + 's'}"
+
+
+def should_skip_directory(path: Path, ignored: set[str]) -> bool:
+    return any(part in ignored or part.startswith(".") for part in path.parts)
 
 
 def confirm_proposal(hub: Hub, proposal_id: str) -> dict[str, Any]:

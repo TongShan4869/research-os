@@ -11,7 +11,7 @@ from research_os.config import Hub, HubError, load_projects, load_sources
 from research_os.graph import build_graph, write_graph
 from research_os.paths import obsidian_vault_path
 from research_os.projects import find_project
-from research_os.wiki import append_wiki_log, queue_wiki_integration
+from research_os.wiki import append_wiki_log, evolve_concept_notes_from_sources, queue_wiki_integration
 
 
 CONCEPT_KEYWORDS = {
@@ -81,6 +81,14 @@ def ingest_zotero_collection(hub: Hub, collection_ref: str, project_id: str, zot
         render_collection_note(collection_name, collection_key, project_id, paper_links),
     )
     merge_sources(hub, paper_entries)
+    evolved = evolve_concept_notes_from_sources(hub, paper_entries)
+    if evolved:
+        append_wiki_log(
+            hub,
+            "evolve-concepts",
+            collection_name,
+            f"Updated concept wiki links for {len(evolved)} concept page(s) from Zotero metadata.",
+        )
     write_graph(hub, build_graph(hub))
     return IngestResult(collection_name=collection_name, collection_key=collection_key, item_count=len(paper_entries), vault_path=vault)
 

@@ -9,7 +9,7 @@ from research_os.config import Hub, load_files, load_inbox, load_projects, load_
 from research_os.graph import graph_from_registries
 from research_os.paths import obsidian_vault_path
 from research_os.staleness import FINGERPRINT_KEY, FINGERPRINT_VERSION, FINGERPRINT_VERSION_KEY, home_fingerprint
-from research_os.wiki import count_pending_wiki_integrations, folder_guide_markdown_table, wiki_page_count
+from research_os.wiki import count_pending_wiki_integrations, ensure_concept_notes, folder_guide_markdown_table, wiki_page_count
 
 
 def build_index(hub: Hub) -> Path:
@@ -18,6 +18,7 @@ def build_index(hub: Hub) -> Path:
     inbox = load_inbox(hub)
     files = load_files(hub)
     relations = load_relations(hub)
+    ensure_concept_notes(hub, registry_concepts(projects, sources, files))
     home_path = obsidian_vault_path(hub) / "Home.md"
     write_text_if_changed(
         home_path,
@@ -33,6 +34,17 @@ def build_index(hub: Hub) -> Path:
         ),
     )
     return home_path
+
+
+def registry_concepts(
+    projects: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+    files: list[dict[str, Any]],
+) -> list[str]:
+    concepts: list[str] = []
+    for item in [*projects, *sources, *files]:
+        concepts.extend(string_list(item.get("concepts")))
+    return concepts
 
 
 def render_home(

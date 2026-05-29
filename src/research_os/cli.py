@@ -12,7 +12,7 @@ from research_os.index import build_index
 from research_os.ingest import ingest_zotero_collection
 from research_os.integrate import integrate_source
 from research_os.projects import attach_folder, create_project, load_optional_hub, resolve_project
-from research_os.scan import apply_scan, confirm_proposal, scan_hub
+from research_os.scan import apply_scan, confirm_proposal, index_folder_surfaces, scan_hub
 from research_os.staleness import context_health, render_context_health
 from research_os.validation import validate_hub
 from research_os.visual import write_visual
@@ -94,6 +94,15 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument("--max-files", type=int, default=None, help="Stop scanning after this many non-ignored files.")
     add_hub_argument(scan_parser)
     scan_parser.set_defaults(handler=run_scan)
+
+    index_folders_parser = subparsers.add_parser(
+        "index-folders",
+        help="Index attached project subfolders as summarized context surfaces.",
+    )
+    index_folders_parser.add_argument("--ignore", action="append", default=[], help="Folder or file name to skip. Repeatable.")
+    index_folders_parser.add_argument("--max-depth", type=int, default=2, help="Maximum subfolder depth to index below each attached root.")
+    add_hub_argument(index_folders_parser)
+    index_folders_parser.set_defaults(handler=run_index_folders)
 
     confirm_parser = subparsers.add_parser("confirm-proposal", help="Promote one pending scan proposal into registries/files.yaml.")
     confirm_parser.add_argument("proposal_id")
@@ -314,6 +323,24 @@ def run_scan(args: argparse.Namespace) -> int:
         print(f"wrote inbox: {inbox_path}")
     else:
         print("dry run: no registries changed")
+    return 0
+
+
+def run_index_folders(args: argparse.Namespace) -> int:
+    try:
+        hub = load_hub(args.hub)
+        surfaces = index_folder_surfaces(hub, ignore_names=args.ignore, max_depth=args.max_depth)
+        graph_path = write_graph(hub, build_graph(hub))
+        index_path = build_index(hub)
+        visual_path = write_visual(hub, read_graph(hub))
+    except HubError as error:
+        print(error)
+        return 1
+    print(f"folder surfaces: {len(surfaces)}")
+    print(f"wrote files registry: {hub.files_path}")
+    print(f"wrote graph: {graph_path}")
+    print(f"wrote index: {index_path}")
+    print(f"wrote visual explorer: {visual_path}")
     return 0
 
 

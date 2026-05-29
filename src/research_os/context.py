@@ -164,8 +164,10 @@ def query_matches_item(query: str, item: dict[str, Any]) -> bool:
 
 
 def project_match_terms(project: dict[str, Any]) -> set[str]:
+    project_id = string_value(project.get("id"))
     candidates = [
-        string_value(project.get("id")),
+        project_id,
+        f"project:{project_id}" if project_id else None,
         string_value(project.get("title")),
         *string_list(project.get("tags")),
         *string_list(project.get("concepts")),

@@ -9,6 +9,8 @@ from research_os.paths import obsidian_vault_path
 
 
 WIKI_DIRS = ["Synthesis", "Entities", "Concepts", "Claims", "Methods", "Datasets", "Results"]
+INDEXED_SOURCES_START = "<!-- research-os:indexed-sources:start -->"
+INDEXED_SOURCES_END = "<!-- research-os:indexed-sources:end -->"
 FOLDER_GUIDE = [
     {
         "folder": "Projects/",
@@ -77,6 +79,177 @@ def wiki_log_path(hub: Hub) -> Path:
 
 def wiki_inbox_path(hub: Hub) -> Path:
     return obsidian_vault_path(hub) / "wiki" / "inbox.md"
+
+
+def ensure_concept_notes(hub: Hub, concepts: list[str]) -> list[Path]:
+    concepts_dir = obsidian_vault_path(hub) / "Concepts"
+    concepts_dir.mkdir(parents=True, exist_ok=True)
+    created: list[Path] = []
+    for concept in sorted(set(clean_concepts(concepts))):
+        path = concepts_dir / f"{safe_concept_filename(concept)}.md"
+        if path.exists():
+            continue
+        path.write_text(render_concept_stub(concept), encoding="utf-8")
+        created.append(path)
+    return created
+
+
+def evolve_concept_notes_from_sources(hub: Hub, sources: list[dict[str, object]]) -> list[Path]:
+    concepts = sorted(
+        {
+            concept
+            for source in sources
+            for concept in clean_concepts(source.get("concepts") if isinstance(source, dict) else [])
+        }
+    )
+    if not concepts:
+        return []
+    ensure_concept_notes(hub, concepts)
+    ensure_wiki_index_entries(
+        hub,
+        [
+            {
+                "target": f"Concepts/{safe_concept_filename(concept)}",
+                "title": concept_title(concept),
+                "summary": "Concept discovered from indexed sources.",
+            }
+            for concept in concepts
+        ],
+    )
+
+    concepts_dir = obsidian_vault_path(hub) / "Concepts"
+    updated: list[Path] = []
+    for concept in concepts:
+        concept_sources = [source for source in sources if concept in clean_concepts(source.get("concepts", []))]
+        if not concept_sources:
+            continue
+        path = concepts_dir / f"{safe_concept_filename(concept)}.md"
+        text = path.read_text(encoding="utf-8")
+        next_text = upsert_indexed_sources_section(text, render_indexed_sources_block(concept, concept_sources))
+        if next_text != text:
+            path.write_text(next_text, encoding="utf-8")
+            updated.append(path)
+    return updated
+
+
+def ensure_wiki_index_entries(hub: Hub, entries: list[dict[str, str]]) -> None:
+    path = wiki_index_path(hub)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing = path.read_text(encoding="utf-8") if path.is_file() else "# Research OS Index\n\n"
+    existing_targets = {parsed["path"].removesuffix(".md") for line in existing.splitlines() if (parsed := parse_index_line(line))}
+    lines = []
+    for entry in entries:
+        target = entry["target"]
+        if target in existing_targets:
+            continue
+        lines.append(f"- [[{target}|{entry['title']}]] - {entry['summary']}")
+    if not lines:
+        return
+    if not existing.endswith("\n"):
+        existing += "\n"
+    path.write_text(existing + "\n".join(lines) + "\n", encoding="utf-8")
+
+
+def upsert_indexed_sources_section(text: str, block: str) -> str:
+    marked_block_pattern = re.compile(
+        rf"\n*## Indexed Sources\n\n{re.escape(INDEXED_SOURCES_START)}.*?{re.escape(INDEXED_SOURCES_END)}\n*",
+        re.DOTALL,
+    )
+    section = f"\n\n## Indexed Sources\n\n{INDEXED_SOURCES_START}\n{block}{INDEXED_SOURCES_END}\n"
+    if marked_block_pattern.search(text):
+        return marked_block_pattern.sub(section, text).rstrip() + "\n"
+    return text.rstrip() + section
+
+
+def render_indexed_sources_block(concept: str, sources: list[dict[str, object]]) -> str:
+    lines = [render_indexed_source_line(concept, source) for source in sorted(sources, key=source_sort_key)]
+    return "\n".join(line for line in lines if line) + "\n"
+
+
+def source_sort_key(source: dict[str, object]) -> tuple[str, str]:
+    date_value = source.get("date")
+    title_value = source.get("title")
+    return (str(date_value) if isinstance(date_value, str) else "", str(title_value) if isinstance(title_value, str) else "")
+
+
+def render_indexed_source_line(concept: str, source: dict[str, object]) -> str:
+    title = string_value(source.get("title")) or string_value(source.get("id")) or "Untitled source"
+    note_key = string_value(source.get("citation_key")) or safe_note_filename(string_value(source.get("id")) or title)
+    parts = []
+    project_text = ", ".join(clean_concepts(source.get("projects", [])))
+    if project_text:
+        parts.append(f"project: {project_text}")
+    evidence_text = evidence_fields_for_concept(source, concept)
+    if evidence_text:
+        parts.append(f"evidence: {evidence_text}")
+    detail = f" - {'; '.join(parts)}" if parts else ""
+    return f"- [[Sources/Papers/{note_key}|{title}]]{detail}"
+
+
+def evidence_fields_for_concept(source: dict[str, object], concept: str) -> str:
+    classification = source.get("classification")
+    if not isinstance(classification, dict):
+        return ""
+    evidence = classification.get("evidence")
+    if not isinstance(evidence, list):
+        return ""
+    for item in evidence:
+        if not isinstance(item, dict) or item.get("concept") != concept:
+            continue
+        fields = clean_concepts(item.get("fields", []))
+        return ", ".join(fields)
+    return ""
+
+
+def safe_note_filename(value: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9_.:-]+", "-", value.strip()).strip("-")
+    return safe or "untitled"
+
+
+def string_value(value: object) -> str | None:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def clean_concepts(concepts: object) -> list[str]:
+    if not isinstance(concepts, list):
+        return []
+    return [concept.strip() for concept in concepts if isinstance(concept, str) and concept.strip()]
+
+
+def safe_concept_filename(concept: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9_.:-]+", "-", concept.strip()).strip("-")
+    return safe or "unknown"
+
+
+def concept_title(concept: str) -> str:
+    return concept.strip().replace("-", " ")
+
+
+def render_concept_stub(concept: str) -> str:
+    title = concept_title(concept)
+    return "\n".join(
+        [
+            "---",
+            "type: concept",
+            "status: stub",
+            "tags:",
+            f"  - {safe_concept_filename(concept)}",
+            "---",
+            "",
+            f"# {title}",
+            "",
+            "## Definition",
+            "",
+            f"{title.capitalize()} is an indexed Research OS concept discovered from project, source, or file metadata. Refine this definition as the wiki accumulates stronger evidence.",
+            "",
+            "## Related",
+            "",
+            "- Review linked graph neighbors and source notes before treating this stub as settled knowledge.",
+            "",
+        ]
+    )
 
 
 def folder_guide_markdown_table(include_maintainer: bool) -> str:

@@ -200,7 +200,7 @@ These instruct Codex to treat Research OS as an indexed research system and load
 1. `research-os.yaml`
 2. `registries/projects.yaml`
 3. `registries/sources.yaml`
-4. `obsidian/starter-vault/Home.md` or configured vault path
+4. `obsidian/research-os/Home.md` or configured vault path
 5. `graph/graph.json` when graph context is useful
 
 ## Pushed Commit History

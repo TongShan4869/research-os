@@ -93,6 +93,18 @@ def test_context_outputs_markdown_summary(tmp_path: Path, capsys):
     assert "- auditory-demo: Auditory Demo" in output
 
 
+def test_context_accepts_graph_project_node_id(tmp_path: Path, capsys):
+    hub = tmp_path / "ResearchOS"
+    assert main(["init", str(hub)]) == 0
+    assert main(["new-project", "auditory-demo", "--title", "Auditory Demo", "--hub", str(hub)]) == 0
+    capsys.readouterr()
+
+    assert main(["context", "project:auditory-demo", "--hub", str(hub), "--json"]) == 0
+
+    packet = json.loads(capsys.readouterr().out)
+    assert packet["match"]["id"] == "project:auditory-demo"
+
+
 def test_context_json_serializes_yaml_dates(tmp_path: Path, capsys):
     hub = tmp_path / "ResearchOS"
     assert main(["init", str(hub)]) == 0
@@ -112,7 +124,7 @@ def test_context_packet_includes_relevant_wiki_pages(tmp_path: Path, capsys):
     hub = tmp_path / "ResearchOS"
     assert main(["init", str(hub)]) == 0
     assert main(["new-project", "auditory-demo", "--title", "Auditory Demo", "--hub", str(hub)]) == 0
-    vault = hub / "obsidian" / "starter-vault"
+    vault = hub / "obsidian" / "research-os"
     (vault / "index.md").write_text(
         "# Wiki Index\n\n- [[Synthesis/auditory-demo|Auditory Demo synthesis]] - project synthesis for auditory-demo\n",
         encoding="utf-8",
@@ -152,7 +164,7 @@ def test_context_packet_includes_wiki_excerpts_and_graph_neighbors(tmp_path: Pat
             "concepts": ["auditory-brainstem-response"],
         }
     ]
-    vault = hub / "obsidian" / "starter-vault"
+    vault = hub / "obsidian" / "research-os"
     (vault / "index.md").write_text(
         "# Wiki Index\n\n- [[Synthesis/auditory-demo|ABR synthesis]] - project synthesis for auditory-demo\n",
         encoding="utf-8",
@@ -220,7 +232,7 @@ def test_context_resolves_project_source_file_folder_collection_and_wiki_terms(t
             "concepts": ["auditory-brainstem-response"],
         }
     ]
-    vault = hub / "obsidian" / "starter-vault"
+    vault = hub / "obsidian" / "research-os"
     (vault / "index.md").write_text(
         "# Wiki Index\n\n- [[Synthesis/auditory-demo|ABR synthesis]] - project synthesis for auditory-demo\n",
         encoding="utf-8",

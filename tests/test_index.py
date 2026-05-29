@@ -4,7 +4,7 @@ import yaml
 
 from research_os.cli import main
 from research_os.config import load_hub
-from research_os.graph import build_graph, graph_from_registries
+from research_os.graph import build_graph
 from research_os.wiki import folder_guide_markdown_table
 
 
@@ -42,7 +42,7 @@ def test_build_index_creates_home_note_from_registries(tmp_path: Path):
     exit_code = main(["build-index", "--hub", str(hub)])
 
     assert exit_code == 0
-    home = hub / "obsidian" / "starter-vault" / "Home.md"
+    home = hub / "obsidian" / "research-os" / "Home.md"
     text = home.read_text(encoding="utf-8")
     assert "type: research_os_home" in text
     assert "# Research OS" in text
@@ -95,10 +95,9 @@ def test_build_index_uses_canonical_graph_counts_with_drift_prone_registries(tmp
 
     assert main(["build-index", "--hub", str(hub)]) == 0
 
-    graph = graph_from_registries(projects, sources)
-    assert build_graph(load_hub(hub)) == graph
+    graph = build_graph(load_hub(hub))
     graph_line = f"- Graph: {len(graph['nodes'])} nodes, {len(graph['edges'])} edges"
-    text = (hub / "obsidian" / "starter-vault" / "Home.md").read_text(encoding="utf-8")
+    text = (hub / "obsidian" / "research-os" / "Home.md").read_text(encoding="utf-8")
     assert graph_line == "- Graph: 5 nodes, 6 edges"
     assert graph_line in text
 
@@ -120,7 +119,7 @@ def test_build_index_shows_context_readiness_and_inbox_counts(tmp_path: Path):
 
     assert main(["build-index", "--hub", str(hub)]) == 0
 
-    text = (hub / "obsidian" / "starter-vault" / "Home.md").read_text(encoding="utf-8")
+    text = (hub / "obsidian" / "research-os" / "Home.md").read_text(encoding="utf-8")
     assert "## Context Readiness" in text
     assert "- Pending inbox proposals: 1" in text
     assert "- Projects with folders: 0" in text
@@ -129,7 +128,7 @@ def test_build_index_shows_context_readiness_and_inbox_counts(tmp_path: Path):
 def test_build_index_links_wiki_core_and_pending_integration_count(tmp_path: Path):
     hub = tmp_path / "ResearchOS"
     assert main(["init", str(hub)]) == 0
-    wiki_inbox = hub / "obsidian" / "starter-vault" / "wiki" / "inbox.md"
+    wiki_inbox = hub / "obsidian" / "research-os" / "wiki" / "inbox.md"
     wiki_inbox.write_text(
         "# Wiki Integration Inbox\n\n- [ ] paper:smith-2024 -> academic-paper\n- [x] paper:done -> academic-paper\n",
         encoding="utf-8",
@@ -137,7 +136,7 @@ def test_build_index_links_wiki_core_and_pending_integration_count(tmp_path: Pat
 
     assert main(["build-index", "--hub", str(hub)]) == 0
 
-    text = (hub / "obsidian" / "starter-vault" / "Home.md").read_text(encoding="utf-8")
+    text = (hub / "obsidian" / "research-os" / "Home.md").read_text(encoding="utf-8")
     assert "## LLM Wiki" in text
     assert "- [Wiki index](index.md)" in text
     assert "- [Wiki log](log.md)" in text
@@ -154,8 +153,8 @@ def test_folder_guide_uses_shared_taxonomy_for_home_and_wiki_index(tmp_path: Pat
 
     assert main(["build-index", "--hub", str(hub)]) == 0
 
-    home_text = (hub / "obsidian" / "starter-vault" / "Home.md").read_text(encoding="utf-8")
-    wiki_index_text = (hub / "obsidian" / "starter-vault" / "index.md").read_text(encoding="utf-8")
+    home_text = (hub / "obsidian" / "research-os" / "Home.md").read_text(encoding="utf-8")
+    wiki_index_text = (hub / "obsidian" / "research-os" / "index.md").read_text(encoding="utf-8")
     guide = folder_guide_markdown_table(include_maintainer=False)
     assert guide in wiki_index_text
     for line in folder_guide_markdown_table(include_maintainer=True).splitlines():

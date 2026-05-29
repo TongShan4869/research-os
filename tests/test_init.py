@@ -10,26 +10,28 @@ def test_init_creates_bootable_hub(tmp_path: Path, capsys):
 
     assert exit_code == 0
     assert (hub / "research-os.yaml").is_file()
+    assert "obsidian_vault: obsidian/research-os" in (hub / "research-os.yaml").read_text(encoding="utf-8")
     assert (hub / "AGENTS.md").is_file()
     assert (hub / "workflows" / "onboard.md").is_file()
     assert (hub / "registries" / "projects.yaml").is_file()
     assert (hub / "registries" / "sources.yaml").is_file()
-    assert (hub / "obsidian" / "starter-vault" / "index.md").is_file()
-    assert (hub / "obsidian" / "starter-vault" / "log.md").is_file()
-    assert (hub / "obsidian" / "starter-vault" / "wiki" / "inbox.md").is_file()
-    index_text = (hub / "obsidian" / "starter-vault" / "index.md").read_text(encoding="utf-8")
+    assert (hub / "obsidian" / "research-os" / "index.md").is_file()
+    assert (hub / "obsidian" / "research-os" / "log.md").is_file()
+    assert (hub / "obsidian" / "research-os" / "wiki" / "inbox.md").is_file()
+    assert not (hub / "obsidian" / "starter-vault").exists()
+    index_text = (hub / "obsidian" / "research-os" / "index.md").read_text(encoding="utf-8")
     assert "Read this before opening random folders" in index_text
     assert "## Page Types" in index_text
     assert "`Synthesis/`: best first stop" in index_text
     for directory in ["Synthesis", "Entities", "Claims", "Methods", "Datasets", "Results"]:
-        assert (hub / "obsidian" / "starter-vault" / directory).is_dir()
+        assert (hub / "obsidian" / "research-os" / directory).is_dir()
     for workflow in ["integrate-source.md", "query-wiki.md", "lint-wiki.md"]:
         assert (hub / "workflows" / workflow).is_file()
     assert (hub / "schemas" / "project.schema.yaml").is_file()
     assert (hub / "graph" / "graph.json").is_file()
     agents_text = (hub / "AGENTS.md").read_text(encoding="utf-8")
     assert "indexed research system" in agents_text
-    assert "obsidian/starter-vault/Home.md" in agents_text
+    assert "obsidian/research-os/Home.md" in agents_text
     assert "graph/graph.json" in agents_text
     assert "resolve it through the registries" in agents_text
     assert "LLM-maintained synthesis layer" in agents_text

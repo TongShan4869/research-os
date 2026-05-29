@@ -100,7 +100,7 @@ Use this sequence when onboarding a hub. Ask concise questions, then run command
    - Run `research-os build-visual --hub <path>`.
 
 7. Teach the user the cockpit.
-   - `obsidian/starter-vault/Home.md` is the human project cockpit.
+   - `obsidian/research-os/Home.md` is the human project cockpit.
    - `graph/graph.json` is the machine-readable relationship graph.
    - `visual/index.html` is the static visual explorer.
    - `registries/projects.yaml`, `sources.yaml`, `files.yaml`, `relations.yaml`, and `inbox.yaml` are the control plane.

@@ -8,6 +8,7 @@ from typing import Any
 from research_os.config import Hub, load_files, load_projects, load_relations, load_sources
 from research_os.paths import obsidian_vault_path
 from research_os.staleness import graph_with_fingerprint
+from research_os.wiki import ensure_concept_notes
 
 Graph = dict[str, Any]
 
@@ -17,7 +18,19 @@ def build_graph(hub: Hub) -> Graph:
     sources = load_sources(hub)
     files = load_files(hub)
     relations = load_relations(hub)
+    ensure_concept_notes(hub, registry_concepts(projects, sources, files))
     return graph_from_registries(projects, sources, files, relations, node_descriptions=load_node_descriptions(hub))
+
+
+def registry_concepts(
+    projects: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+    files: list[dict[str, Any]],
+) -> list[str]:
+    concepts: list[str] = []
+    for item in [*projects, *sources, *files]:
+        concepts.extend(string_list(item.get("concepts")))
+    return concepts
 
 
 def graph_from_registries(

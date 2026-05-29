@@ -105,9 +105,10 @@ def test_build_graph_emits_research_context_nodes_and_edges(tmp_path: Path):
         "Paper linked to auditory-demo about auditory brainstem response."
     )
     assert nodes_by_id["concept:auditory-system"]["title"] == "auditory system"
-    assert nodes_by_id["concept:auditory-system"]["description"] == (
-        "Concept definition missing for auditory system. Add it to the matching Concepts note."
+    assert nodes_by_id["concept:auditory-system"]["description"].startswith(
+        "Auditory system is an indexed Research OS concept"
     )
+    assert (hub / "obsidian" / "research-os" / "Concepts" / "auditory-system.md").is_file()
     assert nodes_by_id["concept:auditory-brainstem-response"]["title"] == "auditory brainstem response"
     assert nodes_by_id["collection:G6CDLFHD"]["title"] == "ABR"
     assert nodes_by_id["collection:G6CDLFHD"]["metadata"]["zotero_collection_key"] == "G6CDLFHD"
@@ -190,7 +191,7 @@ def test_build_graph_uses_concept_note_definition(tmp_path: Path):
     assert main(["init", str(hub)]) == 0
     projects = [{"id": "auditory-demo", "title": "Auditory Demo", "concepts": ["auditory-brainstem-response"]}]
     (hub / "registries" / "projects.yaml").write_text(yaml.safe_dump(projects, sort_keys=False), encoding="utf-8")
-    concept_note = hub / "obsidian" / "starter-vault" / "Concepts" / "auditory-brainstem-response.md"
+    concept_note = hub / "obsidian" / "research-os" / "Concepts" / "auditory-brainstem-response.md"
     concept_note.parent.mkdir(parents=True, exist_ok=True)
     concept_note.write_text(
         "---\ntype: concept\n---\n\n# Auditory Brainstem Response\n\n"
@@ -209,6 +210,38 @@ def test_build_graph_uses_concept_note_definition(tmp_path: Path):
     assert nodes_by_id["concept:auditory-brainstem-response"]["metadata"]["description_source"] == {
         "kind": "obsidian_note",
         "path": "Concepts/auditory-brainstem-response.md",
+        "section": "Definition",
+    }
+
+
+def test_build_graph_creates_missing_concept_notes_from_registries(tmp_path: Path):
+    hub = tmp_path / "ResearchOS"
+    assert main(["init", str(hub)]) == 0
+    sources = [
+        {
+            "id": "paper:smith-2024",
+            "type": "Paper",
+            "title": "Speech EEG",
+            "projects": ["auditory-demo"],
+            "concepts": ["continuous-speech"],
+        }
+    ]
+    (hub / "registries" / "sources.yaml").write_text(yaml.safe_dump(sources, sort_keys=False), encoding="utf-8")
+
+    assert main(["build-graph", "--hub", str(hub)]) == 0
+
+    concept_note = hub / "obsidian" / "research-os" / "Concepts" / "continuous-speech.md"
+    assert concept_note.is_file()
+    assert "## Definition" in concept_note.read_text(encoding="utf-8")
+
+    graph = json.loads((hub / "graph" / "graph.json").read_text(encoding="utf-8"))
+    nodes_by_id = {node["id"]: node for node in graph["nodes"]}
+    assert nodes_by_id["concept:continuous-speech"]["description"] != (
+        "Concept definition missing for continuous speech. Add it to the matching Concepts note."
+    )
+    assert nodes_by_id["concept:continuous-speech"]["metadata"]["description_source"] == {
+        "kind": "obsidian_note",
+        "path": "Concepts/continuous-speech.md",
         "section": "Definition",
     }
 

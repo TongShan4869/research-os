@@ -290,13 +290,13 @@ Each hub can point to an existing Obsidian vault or use the starter vault:
 
 ```yaml
 paths:
-  obsidian_vault: obsidian/starter-vault
+  obsidian_vault: obsidian/research-os
 ```
 
 `research-os build-index` creates or refreshes:
 
 ```text
-obsidian/starter-vault/Home.md
+obsidian/research-os/Home.md
 ```
 
 `Home.md` summarizes:
@@ -383,7 +383,7 @@ At session start, Codex should load:
 1. `research-os.yaml`
 2. `registries/projects.yaml`
 3. `registries/sources.yaml`
-4. `obsidian/starter-vault/Home.md`, or the configured vault path
+4. `obsidian/research-os/Home.md`, or the configured vault path
 5. `graph/graph.json` when graph context is useful
 
 When the user mentions a project, tag, paper, folder, concept, or role, Codex should resolve it through the registries before relying on folder names alone.

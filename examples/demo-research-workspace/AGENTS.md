@@ -6,7 +6,7 @@ At session start:
 
 1. Read `research-os.yaml`.
 2. Read `registries/projects.yaml`, `registries/sources.yaml`, `registries/files.yaml`, `registries/relations.yaml`, and `registries/inbox.yaml`.
-3. Read `obsidian/starter-vault/Home.md` if it exists.
+3. Read `obsidian/starter-vault/Home.md` if it exists, or the configured Obsidian vault path from `research-os.yaml`.
 4. Read `graph/graph.json` for indexed relationships when graph context is useful.
 5. Use `research-os validate`, `research-os status`, `research-os build-index`, and `research-os build-graph` to inspect it.
 
