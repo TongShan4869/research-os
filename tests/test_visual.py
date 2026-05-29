@@ -61,6 +61,17 @@ def test_render_visual_html_embeds_graph_data():
     assert "html[data-theme=light]" in html
 
 
+def test_render_visual_html_includes_resizable_modern_inspector():
+    html = render_visual_html({"nodes": [], "edges": []})
+
+    assert "--inspector-width" in html
+    assert "inspector-resizer" in html
+    assert "Resize details panel" in html
+    assert "research-os-inspector-width" in html
+    assert "Aptos" in html
+    assert "SF Pro Display" in html
+
+
 def test_write_visual_creates_visual_index(tmp_path: Path):
     hub = Hub(path=tmp_path, config={})
     graph = {"nodes": [], "edges": []}

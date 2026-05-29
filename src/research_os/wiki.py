@@ -242,11 +242,11 @@ def render_concept_stub(concept: str) -> str:
             "",
             "## Definition",
             "",
-            f"{title.capitalize()} is an indexed Research OS concept discovered from project, source, or file metadata. Refine this definition as the wiki accumulates stronger evidence.",
+            f"{title.capitalize()} needs a domain definition. Add a concise explanation of what this concept means independent of any single study or dataset.",
             "",
             "## Related",
             "",
-            "- Review linked graph neighbors and source notes before treating this stub as settled knowledge.",
+            "- Use project notes and indexed sources for applications, examples, and evidence.",
             "",
         ]
     )

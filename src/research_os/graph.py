@@ -387,14 +387,14 @@ def description_payload(
 ) -> dict[str, Any]:
     if explicit:
         return {
-            "description": one_line(explicit),
+            "description": one_line(explicit, max_chars=1200),
             "source": {"kind": "registry", "field": "description"},
         }
 
     note_description = (node_descriptions or {}).get(node_id)
     if note_description:
         return {
-            "description": one_line(string_value(note_description.get("description")) or ""),
+            "description": one_line(string_value(note_description.get("description")) or "", max_chars=1200),
             "source": clean_metadata(
                 {
                     "kind": "obsidian_note",

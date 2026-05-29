@@ -638,6 +638,10 @@ function Inspector({ selected, graph, counts, onToggleExpanded, onFocus, focusId
 function App() {
   const graph = useMemo(() => normalizeGraph(loadGraphData()), []);
   const [theme, setTheme] = useState(() => localStorage.getItem("research-os-visual-theme") || "system");
+  const [inspectorWidth, setInspectorWidth] = useState(() => {
+    const stored = Number(localStorage.getItem("research-os-inspector-width"));
+    return Number.isFinite(stored) ? Math.min(640, Math.max(320, stored)) : 390;
+  });
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(() => new Set());
   const [activeTypes, setActiveTypes] = useState(() => new Set(TYPE_ORDER.filter((type) => graph.nodes.some((node) => nodeType(node) === type))));
@@ -662,6 +666,10 @@ function App() {
     else document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("research-os-visual-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem("research-os-inspector-width", String(inspectorWidth));
+  }, [inspectorWidth]);
 
   const selected = nodes.find((node) => node.id === selectedId) || null;
   const availableTypes = useMemo(() => TYPE_ORDER.filter((type) => graph.nodes.some((node) => nodeType(node) === type)), [graph.nodes]);
@@ -714,8 +722,35 @@ function App() {
     });
   }, []);
 
+  const handleInspectorResize = useCallback((event) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = inspectorWidth;
+    document.body.classList.add("is-resizing-inspector");
+
+    const handlePointerMove = (moveEvent) => {
+      const nextWidth = startWidth - (moveEvent.clientX - startX);
+      setInspectorWidth(Math.min(640, Math.max(320, nextWidth)));
+    };
+    const handlePointerUp = () => {
+      document.body.classList.remove("is-resizing-inspector");
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp, { once: true });
+  }, [inspectorWidth]);
+
+  const handleInspectorResizeKey = useCallback((event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const direction = event.key === "ArrowLeft" ? 1 : -1;
+    setInspectorWidth((width) => Math.min(640, Math.max(320, width + direction * 24)));
+  }, []);
+
   return (
-    <div className="app-shell">
+    <div className="app-shell" style={{ "--inspector-width": `${inspectorWidth}px` }}>
       <header className="topbar">
         <div className="brand">
           <strong>Research OS</strong>
@@ -780,6 +815,14 @@ function App() {
           </ReactFlowProvider>
         </div>
       </main>
+      <div
+        aria-label="Resize details panel"
+        className="inspector-resizer"
+        onPointerDown={handleInspectorResize}
+        onKeyDown={handleInspectorResizeKey}
+        role="separator"
+        tabIndex={0}
+      />
       <Inspector
         selected={selected}
         graph={graph}

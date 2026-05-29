@@ -105,8 +105,8 @@ def test_build_graph_emits_research_context_nodes_and_edges(tmp_path: Path):
         "Paper linked to auditory-demo about auditory brainstem response."
     )
     assert nodes_by_id["concept:auditory-system"]["title"] == "auditory system"
-    assert nodes_by_id["concept:auditory-system"]["description"].startswith(
-        "Auditory system is an indexed Research OS concept"
+    assert nodes_by_id["concept:auditory-system"]["description"] == (
+        "Auditory system needs a domain definition. Add a concise explanation of what this concept means independent of any single study or dataset."
     )
     assert (hub / "obsidian" / "research-os" / "Concepts" / "auditory-system.md").is_file()
     assert nodes_by_id["concept:auditory-brainstem-response"]["title"] == "auditory brainstem response"
@@ -214,6 +214,28 @@ def test_build_graph_uses_concept_note_definition(tmp_path: Path):
     }
 
 
+def test_build_graph_preserves_full_note_description_for_inspector(tmp_path: Path):
+    hub = tmp_path / "ResearchOS"
+    assert main(["init", str(hub)]) == 0
+    projects = [{"id": "auditory-demo", "title": "Auditory Demo", "concepts": ["emotional-prosody"]}]
+    (hub / "registries" / "projects.yaml").write_text(yaml.safe_dump(projects, sort_keys=False), encoding="utf-8")
+    definition = (
+        "Emotional prosody is the affective information carried by speech acoustics, such as pitch, timing, "
+        "intensity, and voice quality. In this project, it is operationalized through happy, sad, and spontaneous "
+        "story recordings used during an EEG listening task."
+    )
+    concept_note = hub / "obsidian" / "research-os" / "Concepts" / "emotional-prosody.md"
+    concept_note.parent.mkdir(parents=True, exist_ok=True)
+    concept_note.write_text(f"# Emotional Prosody\n\n## Definition\n\n{definition}\n", encoding="utf-8")
+
+    assert main(["build-graph", "--hub", str(hub)]) == 0
+
+    graph = json.loads((hub / "graph" / "graph.json").read_text(encoding="utf-8"))
+    nodes_by_id = {node["id"]: node for node in graph["nodes"]}
+    assert nodes_by_id["concept:emotional-prosody"]["description"] == definition
+    assert not nodes_by_id["concept:emotional-prosody"]["description"].endswith("...")
+
+
 def test_build_graph_creates_missing_concept_notes_from_registries(tmp_path: Path):
     hub = tmp_path / "ResearchOS"
     assert main(["init", str(hub)]) == 0
@@ -232,12 +254,16 @@ def test_build_graph_creates_missing_concept_notes_from_registries(tmp_path: Pat
 
     concept_note = hub / "obsidian" / "research-os" / "Concepts" / "continuous-speech.md"
     assert concept_note.is_file()
-    assert "## Definition" in concept_note.read_text(encoding="utf-8")
+    concept_text = concept_note.read_text(encoding="utf-8")
+    assert "## Definition" in concept_text
+    definition_text = concept_text.split("## Definition", 1)[1].split("##", 1)[0].casefold()
+    assert "project" not in definition_text
+    assert "research os" not in definition_text
 
     graph = json.loads((hub / "graph" / "graph.json").read_text(encoding="utf-8"))
     nodes_by_id = {node["id"]: node for node in graph["nodes"]}
-    assert nodes_by_id["concept:continuous-speech"]["description"] != (
-        "Concept definition missing for continuous speech. Add it to the matching Concepts note."
+    assert nodes_by_id["concept:continuous-speech"]["description"] == (
+        "Continuous speech needs a domain definition. Add a concise explanation of what this concept means independent of any single study or dataset."
     )
     assert nodes_by_id["concept:continuous-speech"]["metadata"]["description_source"] == {
         "kind": "obsidian_note",
